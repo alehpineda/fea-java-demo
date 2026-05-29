@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>readmesh.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">gener</a> &gt; <span class="el_source">readmesh.java</span></div><h1>readmesh.java</h1><pre class="source lang-java linenums">package gener;
+
+import model.*;
+import fea.Jmgen;
+import util.FeScanner;
+
+// Read mesh data from text file.
+// Input: modelName - name of the finite element model;
+// fileName - name of the file.
+public class readmesh {
+
+<span class="fc" id="L12">    public readmesh() {</span>
+
+<span class="fc" id="L14">        String modelName = Jmgen.RD.next();</span>
+<span class="fc" id="L15">        String fileName = Jmgen.RD.next();</span>
+<span class="fc" id="L16">        Jmgen.PR.printf(&quot;ReadMesh:  %s    %s\n&quot;,</span>
+                modelName, fileName);
+<span class="fc" id="L18">        FeScanner RD = new FeScanner(Jmgen.RD.resolveSibling(fileName));</span>
+<span class="fc" id="L19">        FeModel m = new FeModel(RD, Jmgen.PR);</span>
+<span class="fc" id="L20">        m.readData();</span>
+<span class="fc" id="L21">        Jmgen.blocks.put(modelName, m);</span>
+<span class="fc" id="L22">        Jmgen.PR.printf(&quot;Mesh &quot; + modelName +</span>
+<span class="fc" id="L23">                &quot;: nEl = %d  nNod = %d\n&quot;, m.nEl, m.nNod);</span>
+<span class="fc" id="L24">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

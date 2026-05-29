@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Solver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">solver</a> &gt; <span class="el_source">Solver.java</span></div><h1>Solver.java</h1><pre class="source lang-java linenums">package solver;
+
+import elem.*;
+import model.*;
+import fea.FE;
+
+// Solution of the global equation system
+<span class="fc" id="L8">public abstract class Solver {</span>
+
+    static FeModel fem;
+    // number of equations
+    static int neq;
+    // length of global stiffness matrix
+    public static int lengthOfGSM;
+    // elem connectivities - degrees of freedom
+    int[] indf;
+    // number of degrees of freedom for element
+    int nindf;
+    // Indicator of new global matrix
+    boolean newMatrix;
+
+<span class="fc" id="L22">    public static enum Solvers {</span>
+<span class="fc" id="L23">        ldu {Solver create()</span>
+<span class="fc" id="L24">                {return new SolverLDU();} },</span>
+<span class="fc" id="L25">        pcg {Solver create()</span>
+<span class="fc" id="L26">                {return new SolverPCG();} };</span>
+        abstract Solver create();
+    }
+
+<span class="fc" id="L30">    public static Solvers solver = Solvers.ldu;</span>
+
+    public static Solver newSolver(FeModel fem) {
+<span class="fc" id="L33">        Solver.fem = fem;</span>
+<span class="fc" id="L34">        neq = fem.nEq;</span>
+<span class="fc" id="L35">        return solver.create();</span>
+    }
+
+    // Assemble global stiffnes matrix
+    public void assembleGSM() {
+        Element elm;
+<span class="fc" id="L41">        indf = new int[FE.maxNodesPerElem*fem.nDf];</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        for (int iel=0; iel&lt;fem.nEl; iel++) {</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            for (int i=0; i&lt;fem.elems[iel].ind.length; i++) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">                for (int k=0; k&lt;fem.nDf; k++)</span>
+<span class="fc" id="L46">                    indf[fem.nDf*i+k] =</span>
+                        (fem.elems[iel].ind[i]-1)*fem.nDf+k+1;
+            }
+<span class="fc" id="L49">            nindf = fem.elems[iel].ind.length*fem.nDf;</span>
+<span class="fc" id="L50">            elm = fem.elems[iel];</span>
+<span class="fc" id="L51">            elm.setElemXy();</span>
+<span class="fc" id="L52">            elm.stiffnessMatrix();</span>
+<span class="fc" id="L53">            assembleESM();</span>
+        }
+        // Indicate that new global matrix appeared
+<span class="fc" id="L56">        newMatrix = true;</span>
+<span class="fc" id="L57">    }</span>
+
+    // Add element stiffness matrix to GSM
+<span class="nc" id="L60">    void assembleESM() {}</span>
+
+    // Solve global equation system
+    // x - right-hand side/solution (in/out)
+    public int solve(double x[]) {
+<span class="nc" id="L65">        return 0;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FeScanner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">util</a> &gt; <span class="el_source">FeScanner.java</span></div><h1>FeScanner.java</h1><pre class="source lang-java linenums">package util;
+
+import model.Dof;
+
+import java.nio.file.Path;
+import java.util.ListIterator;
+import java.util.Scanner;
+
+// JFEM data scanner. Delimiters: blank, =.
+public class FeScanner {
+
+    private final Scanner es;
+    private final Path sourcePath;
+
+    // Constructs FE data scanner.
+    // fileIn - name of the file containing data.
+<span class="fc" id="L17">    public FeScanner(String fileIn) {</span>
+
+<span class="fc" id="L19">        sourcePath = Path.of(fileIn).toAbsolutePath().normalize();</span>
+        try {
+<span class="fc" id="L21">            es = new Scanner(sourcePath.toFile());</span>
+<span class="nc" id="L22">        } catch (Exception e) {</span>
+<span class="nc" id="L23">            throw new FeaException(&quot;Input file not found: &quot; + fileIn);</span>
+<span class="fc" id="L24">        }</span>
+<span class="fc" id="L25">        es.useDelimiter(&quot;\\s*=\\s*|\\s+&quot;);</span>
+
+<span class="fc" id="L27">    }</span>
+
+    // Returns  true if another token is available.
+<span class="fc" id="L30">    public boolean hasNext() { return es.hasNext(); }</span>
+
+     // Returns  true if double is next in input.
+<span class="fc" id="L33">    public boolean hasNextDouble() {return es.hasNextDouble();}</span>
+
+    // Gives the next token from this scanner.
+<span class="fc" id="L36">    public String next() { return es.next(); }</span>
+
+    // Gives the next double from this scanner.
+<span class="fc" id="L39">    public double nextDouble() { return es.nextDouble(); }</span>
+
+    // Resolves a file path relative to the scanner source file.
+    public String resolveSibling(String fileName) {
+<span class="fc" id="L43">        Path candidate = Path.of(fileName);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (candidate.isAbsolute()) {</span>
+<span class="nc" id="L45">            return candidate.normalize().toString();</span>
+        }
+<span class="fc" id="L47">        Path parent = sourcePath.getParent();</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L49">            return candidate.normalize().toString();</span>
+        }
+<span class="fc" id="L51">        return parent.resolve(candidate).normalize().toString();</span>
+    }
+
+    // Reads the next integer.
+    // Generates an error if next token is not integer.
+    public int readInt() {
+<span class="pc bfc" id="L57" title="All 2 branches covered.">        if (!es.hasNextInt()) UTIL.errorMsg(</span>
+<span class="fc" id="L58">                &quot;Expected integer. Instead: &quot;+es.next());</span>
+<span class="fc" id="L59">        return es.nextInt();</span>
+    }
+
+    // Reads the next double.
+    // Generates an error if next token is not double.
+    public double readDouble() {
+<span class="pc bfc" id="L65" title="All 2 branches covered.">        if (!es.hasNextDouble()) UTIL.errorMsg(</span>
+<span class="fc" id="L66">                &quot;Expected double. Instead: &quot;+es.next());</span>
+<span class="fc" id="L67">        return es.nextDouble();</span>
+    }
+
+    // Advances the scanner past the current line.
+<span class="fc" id="L71">    public void nextLine() { es.nextLine(); }</span>
+
+    // Moves to line which follows a line with the word.
+    public void moveAfterLineWithWord(String word) {
+
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        while (es.hasNext()) {</span>
+<span class="fc" id="L77">            String varname = es.next().toLowerCase();</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (varname.equals(&quot;#&quot;)) { es.nextLine();</span>
+<span class="fc" id="L79">                                              continue; }</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            if (varname.equals(word)) {</span>
+<span class="fc" id="L81">                es.nextLine();</span>
+<span class="fc" id="L82">                return;</span>
+            }
+<span class="fc" id="L84">        }</span>
+<span class="nc" id="L85">        UTIL.errorMsg(&quot;moveAfterLineWithWord cannot find: &quot;</span>
+                + word);
+<span class="nc" id="L87">    }</span>
+
+    // Method reads &lt; nNumbers numbers &gt; and places resulting
+    // degrees of freedom in a List data structure.
+    // Here numbers is a sequence of the type n1 n2 -n3 ...
+    // where n2 -n3 means from n2 to n3 inclusive.
+    // it - list iterator.
+    // dir - direction (1,2,3).
+    // nDim - problem dimension (2/3).
+    // sValue - specified value.
+    // returns - modified list iterator it.
+    public ListIterator&lt;Dof&gt; readNumberList(ListIterator&lt;Dof&gt; it,
+                 int dir, int ndim, double sValue) {
+        // number of items in the list
+<span class="fc" id="L101">        int ndata = readInt();</span>
+        int i1, i2;
+<span class="fc" id="L103">        i1 = i2 = readInt();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        for (int i=1; i&lt;ndata; i++) {</span>
+<span class="fc" id="L105">            i2 = readInt();</span>
+<span class="pc bpc" id="L106" title="1 of 4 branches missed.">            if (i2 &gt; 0 &amp;&amp; i1 &gt;= 0) {</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                if (i1 &gt; 0) {</span>
+<span class="fc" id="L108">                    it.add(new Dof(ndim*(i1-1)+dir, sValue));</span>
+                }
+<span class="fc" id="L110">                i1 = i2;</span>
+            }
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            else if (i2 &lt; 0) {</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                for (int j=i1; j&lt;=(-i2); j++) {</span>
+<span class="fc" id="L114">                    it.add(new Dof(ndim*(j-1)+dir, sValue));</span>
+                }
+<span class="fc" id="L116">                i1 = 0;</span>
+<span class="fc" id="L117">                i2 = 0;</span>
+            }
+        }
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (i2 &gt; 0) {</span>
+<span class="fc" id="L121">            it.add(new Dof(ndim*(i2-1)+dir, sValue));</span>
+        }
+<span class="fc" id="L123">        return it;</span>
+    }
+
+    // Closes this scanner.
+<span class="fc" id="L127">    public void close() { es.close(); }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

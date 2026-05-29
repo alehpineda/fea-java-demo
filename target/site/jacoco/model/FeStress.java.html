@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FeStress.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">model</a> &gt; <span class="el_source">FeStress.java</span></div><h1>FeStress.java</h1><pre class="source lang-java linenums">package model;
+
+import elem.*;
+import material.*;
+import util.*;
+
+import java.io.*;
+import java.util.ListIterator;
+
+// Stress increment due to displacement increment
+public class FeStress {
+
+    public static double relResidNorm;
+    private FeModel fem;
+
+    // Constructor for stress increment.
+    // fem - finite element model
+<span class="fc" id="L18">    public FeStress(FeModel fem) {</span>
+<span class="fc" id="L19">        this.fem = fem;</span>
+<span class="fc" id="L20">    }</span>
+
+    // Compute stress increment for the finite element model
+    public void computeIncrement() {
+
+        // Accumulate solution vector in displacement increment
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        for (int i=0; i&lt;fem.nEq; i++)</span>
+<span class="fc" id="L27">            FeLoad.dDispl[i] += FeLoad.RHS[i];</span>
+
+        // Compute stresses at reduced integration points
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        for (int iel = 0; iel &lt; fem.nEl; iel++) {</span>
+<span class="fc" id="L31">            Element elm = fem.elems[iel];</span>
+<span class="fc" id="L32">            elm.setElemXyT();</span>
+<span class="fc" id="L33">            elm.disAssembleElemVector(FeLoad.dDispl);</span>
+
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            for (int ip = 0; ip &lt; elm.str.length; ip++) {</span>
+<span class="fc" id="L36">                Material mat = fem.materials.get(elm.matName);</span>
+<span class="fc" id="L37">                mat.strainToStress(elm, ip);</span>
+            }
+        }
+<span class="fc" id="L40">    }</span>
+
+    // Check equilibrium and assemble residual vector.
+    // iter - number of iterations performed
+    public boolean equilibrium(int iter) {
+
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">        if (fem.physLaw == FeModel.PhysLaws.elastic ||</span>
+<span class="fc" id="L47">                iter == FeLoad.maxIterNumber) return true;</span>
+        // Assemble residual vector to right-hand side
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (int i=0; i&lt;fem.nEq; i++)</span>
+<span class="fc" id="L50">            FeLoad.RHS[i] = FeLoad.spLoad[i]+FeLoad.dpLoad[i];</span>
+        Element elm;
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (int iel = 0; iel &lt; fem.nEl; iel++) {</span>
+<span class="fc" id="L53">            elm = fem.elems[iel];</span>
+<span class="fc" id="L54">            elm.setElemXy();</span>
+<span class="fc" id="L55">            elm.equivStressVector();</span>
+<span class="fc" id="L56">            elm.assembleElemVector(Element.evec,FeLoad.RHS);</span>
+        }
+        // Displacement boundary conditions
+<span class="fc" id="L59">        ListIterator&lt;Dof&gt; it = fem.defDs.listIterator(0);</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L61">            Dof d = it.next();</span>
+<span class="fc" id="L62">            FeLoad.RHS[d.dofNum-1] = 0;</span>
+<span class="fc" id="L63">        }</span>
+        // Relative residual norm
+<span class="fc" id="L65">        double dpLoadNorm = vectorNorm(FeLoad.dpLoad);</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (dpLoadNorm &lt; 1e-30)</span>
+<span class="nc" id="L67">            dpLoadNorm = vectorNorm(FeLoad.dhLoad);</span>
+<span class="fc" id="L68">        relResidNorm = vectorNorm(FeLoad.RHS)/dpLoadNorm;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        return relResidNorm &lt; FeLoad.residTolerance;</span>
+    }
+
+    // Returns norm of a vector v
+    double vectorNorm(double[] v) {
+
+<span class="fc" id="L75">        double norm = 0;</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (double aV : v) norm += aV * aV;</span>
+<span class="fc" id="L77">        return Math.sqrt(norm);</span>
+    }
+
+    // Accumulate loads, temperature and stresses
+    public void accumulate() {
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        for (int i=0; i&lt;fem.nEq; i++) {</span>
+<span class="fc" id="L84">            FeLoad.spLoad[i] += FeLoad.dpLoad[i];</span>
+<span class="fc" id="L85">            FeLoad.sDispl[i] += FeLoad.dDispl[i];</span>
+        }
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (int iel = 0; iel &lt; fem.nEl; iel++)</span>
+<span class="fc" id="L88">             fem.elems[iel].accumulateStress();</span>
+<span class="fc" id="L89">    }</span>
+
+    // Write results to a file.
+    public void writeResults() {
+
+<span class="fc" id="L94">        String fileResult = fea.Jfem.fileOut + &quot;.&quot;</span>
+                          + FeLoad.loadStepName;
+<span class="fc" id="L96">        PrintWriter PR =</span>
+<span class="fc" id="L97">                new FePrintWriter().getPrinter(fileResult);</span>
+
+<span class="fc" id="L99">        PR.printf(&quot;Displacements\n\n&quot;);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (fem.nDim == 2)</span>
+<span class="fc" id="L101">            PR.printf(&quot; Node             ux             uy&quot;);</span>
+        else
+<span class="fc" id="L103">            PR.printf(&quot; Node             ux             uy&quot;</span>
+                                        + &quot;             uz&quot;);
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        for (int i = 0; i &lt; fem.nNod; i++) {</span>
+<span class="fc" id="L106">            PR.printf(&quot;\n%5d&quot;, i + 1);</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            for (int j = 0; j &lt; fem.nDim; j++)</span>
+<span class="fc" id="L108">              PR.printf(&quot;%15.6e&quot;, FeLoad.sDispl[fem.nDim*i+j]);</span>
+        }
+
+<span class="fc" id="L111">        PR.printf(&quot;\n\nStresses\n&quot;);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        for (int iel = 0; iel &lt; fem.nEl; iel++) {</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (fem.nDim == 2)</span>
+<span class="fc" id="L114">                PR.printf(&quot;\nEl %4d     sxx            syy&quot;</span>
+                    +&quot;            sxy            szz&quot;
+<span class="fc" id="L116">                    +&quot;            epi&quot;, iel+1);</span>
+            else
+<span class="fc" id="L118">                PR.printf(&quot;\nEl %4d     sxx            syy&quot;</span>
+                    +&quot;            szz            sxy&quot;
+                    +&quot;            syz            szx&quot;
+<span class="fc" id="L121">                    +&quot;            epi&quot;, iel+1);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">            for (StressContainer aStr : fem.elems[iel].str) {</span>
+<span class="fc" id="L123">                PR.printf(&quot;\n&quot;);</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                for (int i = 0; i &lt; 2 * fem.nDim; i++)</span>
+<span class="fc" id="L125">                    PR.printf(&quot;%15.8f&quot;, aStr.sStress[i]);</span>
+<span class="fc" id="L126">                PR.printf(&quot;%15.8f&quot;, aStr.sEpi);</span>
+            }
+        }
+<span class="fc" id="L129">        PR.close();</span>
+<span class="fc" id="L130">    }</span>
+
+    // Read results from a file.
+    // displ - displacements for the finite element model (out)
+    public void readResults(String resultFile,double[] displ) {
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (resultFile==null) return;</span>
+
+<span class="nc" id="L138">        FeScanner RD = new FeScanner(resultFile);</span>
+        // Read displacements
+<span class="nc" id="L140">        RD.moveAfterLineWithWord(&quot;node&quot;);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        for (int i = 0; i &lt; fem.nNod; i++) {</span>
+<span class="nc" id="L142">            RD.readInt();</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            for (int j = 0; j &lt; fem.nDim; j++)</span>
+<span class="nc" id="L144">                displ[fem.nDim*i + j] = RD.readDouble();</span>
+        }
+        // Read stresses
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        for (int iel = 0; iel &lt; fem.nEl; iel++) {</span>
+<span class="nc" id="L148">            RD.moveAfterLineWithWord(&quot;el&quot;);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            for (StressContainer aStr : fem.elems[iel].str) {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                for (int i = 0; i &lt; 2 * fem.nDim; i++)</span>
+<span class="nc" id="L151">                    aStr.sStress[i] = RD.readDouble();</span>
+<span class="nc" id="L152">                aStr.sEpi = RD.readDouble();</span>
+            }
+        }
+<span class="nc" id="L155">        RD.close();</span>
+<span class="nc" id="L156">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

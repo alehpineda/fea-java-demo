@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SolverPCG.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">solver</a> &gt; <span class="el_source">SolverPCG.java</span></div><h1>SolverPCG.java</h1><pre class="source lang-java linenums">package solver;
+
+import fea.*;
+import model.*;
+import elem.*;
+import util.UTIL;
+
+import java.util.ListIterator;
+
+// Preconditioned conjugate gradient (PCG) solver.
+// Matrix storage: sparse-row format
+public class SolverPCG extends Solver {
+
+    // Pointers to matrix rows
+    private int[] prow;
+    // Column numbers for non-zero values in A
+    private int[] coln;
+    // Nonzero values of the global stiffness matrix by rows
+    private double[] A;
+    // Working arrays
+    private double b[], r[], w[], p[], md[];
+
+    // Constructor for PCG solver.
+<span class="fc" id="L24">    public SolverPCG() {</span>
+
+        // Set structure of matrix A
+<span class="fc" id="L27">        setSparseRowStructure();</span>
+
+<span class="fc" id="L29">        A = new double[prow[neq]];</span>
+<span class="fc" id="L30">        b = new double[neq];</span>
+<span class="fc" id="L31">        r = new double[neq];</span>
+<span class="fc" id="L32">        w = new double[neq];</span>
+<span class="fc" id="L33">        p = new double[neq];</span>
+<span class="fc" id="L34">        md = new double[neq];</span>
+<span class="fc" id="L35">    }</span>
+
+    // Set sparse row structure for storage of nonzero
+    //  coefficients of the global stiffness matrix.
+    private void setSparseRowStructure() {
+<span class="fc" id="L40">        prow = new int[neq+1];</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        int lrow = fem.nDf *((fem.nDf == 2) ?</span>
+<span class="pc" id="L42">                                 FE.maxRow2D : FE.maxRow3D);</span>
+<span class="fc" id="L43">        coln = new int[neq*lrow];</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (int i = 0; i &lt;= fem.nNod; i++)</span>
+<span class="fc" id="L45">            prow[i] = i*lrow*fem.nDf;</span>
+
+        // Create nodal sparse-row matrix structure
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        for (int i = 0; i &lt; prow[fem.nNod]; i++) coln[i] = -1;</span>
+        // Diagonal entry - first in row
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        for (int i = 0; i &lt; fem.nNod; i++)  coln[prow[i]] = i;</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (int iel = 0; iel &lt; fem.nEl; iel++) {</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            for (int anInd : fem.elems[iel].ind) {</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                if (anInd == 0) continue;</span>
+<span class="fc" id="L54">                int ii = anInd - 1;  // Hyperrow</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                for (int anInd1 : fem.elems[iel].ind) {</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                    if (anInd1 == 0) continue;</span>
+<span class="fc" id="L57">                    int jj = anInd1 - 1;  // Hypercolumn</span>
+                    int k;
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                    for (k=prow[ii]; k&lt;prow[ii+1]; k++) {</span>
+                        // If column already exists
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                        if (coln[k] == jj) break;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                        if (coln[k] == -1) {</span>
+<span class="fc" id="L63">                            coln[k] = jj;</span>
+<span class="fc" id="L64">                            break;</span>
+                        }
+                    }
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                    if (k==prow[ii+1]) UTIL.errorMsg(</span>
+                        &quot;PCG sparse-row structure: &quot;+
+                        &quot;not enough space for node &quot;+ii);
+                }
+            }
+        }
+
+        // Compress
+<span class="fc" id="L75">        int p = 0;</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (int i = 0; i &lt; fem.nNod; i++) {</span>
+<span class="fc" id="L77">            int k = prow[i];</span>
+<span class="fc" id="L78">            prow[i] = p;</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            for (int j = k; j &lt; prow[i + 1]; j++) {</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                if (coln[j] == -1) break;</span>
+<span class="fc" id="L81">                coln[p++] = coln[j];</span>
+            }
+        }
+<span class="fc" id="L84">        prow[fem.nNod] = p;</span>
+
+        // Transform to degrees of freedom
+<span class="fc" id="L87">        int pdof = p*fem.nDf *fem.nDf;</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        for (int i = fem.nNod - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L89">            int deln = (prow[i+1] - prow[i]);</span>
+<span class="fc" id="L90">            p -= deln;</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            for (int k = fem.nDf; k &gt; 0; k--) {</span>
+<span class="fc" id="L92">                prow[i*fem.nDf+k] = pdof;</span>
+<span class="fc" id="L93">                pdof -= deln*fem.nDf;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                for (int j = prow[i+1]-prow[i]-1; j&gt;=0; j--) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                    for (int m = fem.nDf-1; m &gt;= 0; m--) {</span>
+<span class="fc" id="L96">                        coln[pdof+j*fem.nDf+m] =</span>
+                                coln[p+j]*fem.nDf + m;
+                    }
+                }
+            }
+        }
+<span class="fc" id="L102">        lengthOfGSM = (int) (prow[neq]*1.5);</span>
+<span class="fc" id="L103">    }</span>
+
+    // Assemble element matrix to the global stiffness matrix
+    public void assembleESM() {
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        for (int j = 0; j &lt; nindf; j++) {</span>
+<span class="nc" id="L108">            int jj = indf[j] - 1;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            if (jj &gt;= 0) {</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                for (int i = 0; i &lt; nindf; i++) {</span>
+<span class="nc" id="L111">                    int ii = indf[i] - 1;</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                    if (ii &gt;= 0) {</span>
+                        // Sparse row format (full matrix)
+                        int k;
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                        for (k=prow[jj]; k&lt;prow[jj+1]; k++)</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                            if (coln[k] == ii) break;</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                        if (i &lt;= j) A[k] += Element.kmat[i][j];</span>
+<span class="nc" id="L118">                        else        A[k] += Element.kmat[j][i];</span>
+                    }
+                }
+            }
+        }
+<span class="nc" id="L123">    }</span>
+
+    // Solve equation system by PCG method.
+    // x - right-hand side/solution (in/out)
+    public int solve(double x[]) {
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (newMatrix) {</span>
+<span class="nc" id="L130">            displacementBC();</span>
+<span class="nc" id="L131">            newMatrix = false;</span>
+        }
+<span class="nc" id="L133">        return pcg(x);</span>
+    }
+
+    // Apply displacement boundary conditions:
+    private void displacementBC() {
+
+<span class="nc" id="L139">        ListIterator&lt;Dof&gt; it = fem.defDs.listIterator(0);</span>
+        Dof d;
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L142">            d = it.next();</span>
+<span class="nc" id="L143">            int j = d.dofNum-1;</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            for (int k = prow[j]; k &lt; prow[j+1]; k++)</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                if (coln[k] == j) A[k] = FE.bigValue;</span>
+<span class="nc" id="L146">                else              A[k] = 0.0;</span>
+<span class="nc" id="L147">        }</span>
+<span class="nc" id="L148">    }</span>
+
+    // PCG solution method.
+    // x - right-hand side/solution (in/out)
+    public int pcg(double x[]) {
+
+<span class="nc" id="L154">        diagonalPreconditioner();</span>
+
+        // Save x[] in b[] and calculate initial x
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        for (int i = 0; i &lt; neq; i++) {</span>
+<span class="nc" id="L158">            b[i] = x[i];</span>
+<span class="nc" id="L159">            x[i] = x[i]*md[i];</span>
+        }
+
+        // r = b - A*x and initinal error
+<span class="nc" id="L163">        matrixVectorProduct(x, r);</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        for (int i = 0; i &lt; neq; i++) r[i] = b[i] - r[i];</span>
+<span class="nc" id="L165">        double gamma0 = 1;</span>
+<span class="nc" id="L166">        double gammai = 1;</span>
+        int iter;
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        for (iter = 0; iter &lt; FE.maxIterPcg; iter++) {</span>
+            //  w = (M-1)*r
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            for (int i = 0; i &lt; neq; i++)</span>
+<span class="nc" id="L171">                w[i] = md[i]*r[i];</span>
+            // gam = (r,w)
+<span class="nc" id="L173">            double gammai1 = gammai;</span>
+<span class="nc" id="L174">            gammai = 0;</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            for (int i = 0; i &lt; neq; i++)</span>
+<span class="nc" id="L176">                gammai += r[i]*w[i];</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (iter == 0) {</span>
+<span class="nc" id="L178">                gamma0 = gammai;</span>
+<span class="nc" id="L179">                System.arraycopy(w, 0, p, 0, neq);</span>
+            }
+            else {
+<span class="nc" id="L182">                double rg = gammai /gammai1;</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                for (int i = 0; i &lt; neq; i++)</span>
+<span class="nc" id="L184">                    p[i] = w[i] + rg*p[i];</span>
+            }
+            // w = A*p
+<span class="nc" id="L187">            matrixVectorProduct(p, w);</span>
+<span class="nc" id="L188">            double beta = 0;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">            for (int i = 0;  i &lt; neq; i++) beta += p[i]*w[i];</span>
+<span class="nc" id="L190">            double alpha = gammai/beta;</span>
+            // Update x and r, calculate error
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            for (int i = 0; i &lt; neq; i++) {</span>
+<span class="nc" id="L193">                x[i] += alpha*p[i];</span>
+<span class="nc" id="L194">                r[i] -= alpha*w[i];</span>
+            }
+<span class="nc" id="L196">            double err = Math.sqrt(gammai /gamma0);</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            if (err &lt; FE.epsPCG) return (iter + 1);</span>
+        }
+<span class="nc" id="L199">        return (iter);</span>
+    }
+
+    // Diagonal preconditioner md = (Diag(A))-1.
+    private void diagonalPreconditioner() {
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        for (int j = 0; j &lt; neq; j++) {</span>
+            int i;
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            for (i = prow[j]; i &lt; prow[j+1]; i++)</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                    if (coln[i] == j) break;</span>
+<span class="nc" id="L208">            md[j] = 1.0/A[i];</span>
+        }
+<span class="nc" id="L210">    }</span>
+
+    //  Sparse matrix-vector product y = A*x.
+    private void matrixVectorProduct(double x[], double y[]) {
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (FE.tunedSolver) {</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            if (fem.nDf == 2) {  // tuned for nDf = 2</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                for (int j = 0; j &lt; neq; j++) {</span>
+<span class="nc" id="L217">                    double s = 0;</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    for (int i = prow[j]; i &lt; prow[j+1]; i+=2)</span>
+<span class="nc" id="L219">                        s += A[i  ]*x[coln[i  ]]</span>
+                           + A[i+1]*x[coln[i+1]];
+<span class="nc" id="L221">                    y[j] = s;</span>
+                }
+            }
+            else {    // tuned for nDf = 3
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                for (int j = 0; j &lt; neq; j++) {</span>
+<span class="nc" id="L226">                    double s = 0;</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                    for (int i = prow[j]; i &lt; prow[j+1]; i+=3)</span>
+<span class="nc" id="L228">                        s += A[i  ]*x[coln[i  ]]</span>
+                           + A[i+1]*x[coln[i+1]]
+                           + A[i+2]*x[coln[i+2]];
+<span class="nc" id="L231">                    y[j] = s;</span>
+                }
+            }
+        }
+        else {        // not tuned
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            for (int j = 0; j &lt; neq; j++) {</span>
+<span class="nc" id="L237">                double s = 0;</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                for (int i = prow[j]; i &lt; prow[j+1]; i++)</span>
+<span class="nc" id="L239">                    s += A[i]*x[coln[i]];</span>
+<span class="nc" id="L240">                y[j] = s;</span>
+            }
+        }
+<span class="nc" id="L243">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

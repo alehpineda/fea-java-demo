@@ -1,0 +1,55 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+fea-java-demo,elem,ShapeQuad2D,199,800,29,25,16,67,22,10,1,4
+fea-java-demo,elem,Element.elements,0,15,0,0,0,3,0,1,0,1
+fea-java-demo,elem,StressContainer,0,15,0,0,0,4,0,1,0,1
+fea-java-demo,elem,ElementQuad2D,436,791,43,55,45,107,31,29,3,8
+fea-java-demo,elem,ShapeQuad3D,595,2645,56,52,52,165,48,11,1,4
+fea-java-demo,elem,Element.elements.new Element.elements() {...},0,9,0,0,0,1,0,2,0,2
+fea-java-demo,elem,Element.elements.new Element.elements() {...},0,9,0,0,0,1,0,2,0,2
+fea-java-demo,elem,ElementQuad3D,686,1348,30,48,40,108,19,30,2,8
+fea-java-demo,elem,Element,57,295,4,28,11,57,12,24,8,12
+fea-java-demo,fea,Jmgen,27,85,7,9,8,26,6,4,0,2
+fea-java-demo,fea,FE,3,13,0,0,1,6,1,1,1,1
+fea-java-demo,fea,JmgenRegistry,0,97,0,0,0,13,0,12,0,12
+fea-java-demo,fea,Jfem,35,199,7,11,8,46,6,5,0,2
+fea-java-demo,material,ElasticMaterial,18,539,1,19,1,58,1,15,0,6
+fea-java-demo,material,ElasticPlasticMaterial.Midpoint,157,557,6,18,11,65,6,12,0,6
+fea-java-demo,material,Material,2,92,0,4,2,17,2,10,2,8
+fea-java-demo,material,ElasticPlasticMaterial,440,514,27,27,37,65,20,16,2,7
+fea-java-demo,util,UTIL,3,76,0,8,1,11,1,7,1,3
+fea-java-demo,util,FePrintWriter,3,20,0,0,1,5,0,2,0,2
+fea-java-demo,util,FeaException,0,4,0,0,0,2,0,1,0,1
+fea-java-demo,util,GaussRule,6,534,5,35,1,45,5,18,0,2
+fea-java-demo,util,FeScanner,21,206,5,23,6,47,5,21,0,12
+fea-java-demo,gener,rectangle.vars,0,39,0,0,0,2,0,1,0,1
+fea-java-demo,gener,genquad8,13,911,5,50,6,111,5,31,0,6
+fea-java-demo,gener,genquad8.vars,0,39,0,0,0,2,0,1,0,1
+fea-java-demo,gener,rectangle,13,547,5,34,6,84,5,21,0,4
+fea-java-demo,gener,writemesh,3,237,1,9,1,29,1,5,0,1
+fea-java-demo,gener,sweep.vars,0,27,0,0,0,2,0,1,0,1
+fea-java-demo,gener,copy,4,159,2,8,1,26,2,5,0,2
+fea-java-demo,gener,readmesh,0,62,0,0,0,11,0,1,0,1
+fea-java-demo,gener,connect,14,461,6,32,5,71,6,17,0,4
+fea-java-demo,gener,sweep,91,615,17,44,18,101,14,24,0,6
+fea-java-demo,gener,transform.vars,0,33,0,0,0,2,0,1,0,1
+fea-java-demo,gener,transform,159,455,21,42,13,78,16,23,0,6
+fea-java-demo,gener,transform.elementMirror.new transform.elementMirror() {...},0,94,0,0,0,3,0,2,0,2
+fea-java-demo,gener,transform.elementMirror.new transform.elementMirror() {...},41,5,0,0,2,1,1,1,1,1
+fea-java-demo,gener,transform.elementMirror,0,15,0,0,0,3,0,1,0,1
+fea-java-demo,model,ElemFaceLoad,2,198,2,22,0,43,2,13,0,3
+fea-java-demo,model,FeStress,104,429,14,38,16,65,9,24,1,6
+fea-java-demo,model,FeModelData.PhysLaws,0,15,0,0,0,2,0,1,0,1
+fea-java-demo,model,Dof,0,9,0,0,0,4,0,1,0,1
+fea-java-demo,model,FeModelData,0,102,0,4,0,18,0,9,0,7
+fea-java-demo,model,FeModelData.vars,0,93,0,0,0,5,0,1,0,1
+fea-java-demo,model,FeModel,65,404,15,46,26,101,14,30,0,7
+fea-java-demo,model,FeLoadData.vars,0,63,0,0,0,5,0,1,0,1
+fea-java-demo,model,FeLoadData,0,18,0,0,0,6,0,2,0,2
+fea-java-demo,model,FeModelData.StrStates,0,27,0,0,0,2,0,1,0,1
+fea-java-demo,model,FeLoad,93,539,17,66,24,116,16,37,1,6
+fea-java-demo,solver,Solver.Solvers.new Solver.Solvers() {...},0,9,0,0,0,2,0,2,0,2
+fea-java-demo,solver,Solver.Solvers.new Solver.Solvers() {...},0,9,0,0,0,2,0,2,0,2
+fea-java-demo,solver,Solver.Solvers,0,15,0,0,0,3,0,1,0,1
+fea-java-demo,solver,Solver,3,100,0,6,2,17,2,7,2,4
+fea-java-demo,solver,SolverPCG,600,376,70,34,78,50,44,16,6,2
+fea-java-demo,solver,SolverLDU,199,1574,17,71,20,147,12,40,1,7

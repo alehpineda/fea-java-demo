@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ElasticPlasticMaterial.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">material</a> &gt; <span class="el_source">ElasticPlasticMaterial.java</span></div><h1>ElasticPlasticMaterial.java</h1><pre class="source lang-java linenums">package material;
+
+import elem.Element;
+import fea.FE;
+import util.UTIL;
+
+//  Constitutive relations for elastic-plastic material
+public class ElasticPlasticMaterial extends ElasticMaterial {
+
+    // Stress at the beginning of increment
+<span class="fc" id="L11">    private static double[] sig0 = new double[6];</span>
+    // Stress at the end of increment
+<span class="fc" id="L13">    private static double[] sig = new double[6];</span>
+    // Derivatives of yield function
+<span class="fc" id="L15">    private static double[] a = new double[6];</span>
+    // Elasticity matrix
+<span class="fc" id="L17">    private static double[][] Emat = new double[6][6];</span>
+    // Ea = Emat*a
+<span class="fc" id="L19">    private static double[] Ea = new double[6];</span>
+    // Plastic strain increment
+<span class="fc" id="L21">    private static double[] depsp = new double[6];</span>
+    // Equivalent plastic strain
+    private static double epi;
+    // Shear modulus
+    private static double G;
+    private static final double beta = 0.1;
+    private Midpoint midpoint;
+
+    public ElasticPlasticMaterial(String stressState) {
+
+<span class="fc" id="L31">        super(stressState);</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (stressState.equals(&quot;plstress&quot;))</span>
+<span class="nc" id="L33">            UTIL.errorMsg(&quot;Elastic-plastic material is not &quot;</span>
+            + &quot;implemented for plane stress&quot;);
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (!FE.epIntegrationTANGENT)</span>
+<span class="fc" id="L36">            midpoint = new Midpoint();</span>
+<span class="fc" id="L37">    }</span>
+
+    // Elastic-plastic stress increment.
+    // elm - element,
+    // ip - integration point within element
+    public void strainToStress(Element elm, int ip) {
+
+<span class="fc" id="L44">        elasticityMatrix(Emat);</span>
+<span class="fc" id="L45">        G = getMu();</span>
+
+        // Elastic stress increment dsig due to deps
+<span class="fc" id="L48">        super.strainToStress(elm, ip);</span>
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        for (int i = 0; i &lt; lv; i++) {</span>
+<span class="fc" id="L51">            sig0[i] = elm.str[ip].sStress[i];</span>
+<span class="fc" id="L52">            sig[i] = sig0[i] + dsig[i];</span>
+        }
+        // Equivalent plastic strain
+<span class="fc" id="L55">        epi = elm.str[ip].sEpi;</span>
+<span class="fc" id="L56">        double epi0 = epi;</span>
+<span class="fc" id="L57">        double f1 = yieldFunction(sig, epi);</span>
+
+        // Elastic point
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (f1 &lt; 0.0) return;</span>
+
+        // Elastic-plastic point
+<span class="fc" id="L63">        double f0 = yieldFunction(sig0, epi);</span>
+        double r;
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (f0 &lt; 0.0) {</span>
+<span class="fc" id="L66">            r = -f0/(f1 - f0);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            for (int i = 0; i &lt; lv; i++)</span>
+<span class="fc" id="L68">                sig[i] = sig0[i] + dsig[i]*r;</span>
+<span class="fc" id="L69">            double f = yieldFunction(sig, epi);</span>
+<span class="fc" id="L70">            derivYieldFunc(sig, a);</span>
+<span class="fc" id="L71">            double c1 = 0.0;</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            for (int i = 0; i &lt; lv; i++) c1 += a[i]*dsig[i];</span>
+<span class="fc" id="L73">            r = r - f/c1;</span>
+<span class="fc" id="L74">        }</span>
+<span class="nc" id="L75">        else r = 0.0;</span>
+
+        // Number of subincrements ( = 1 for midpoint method)
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        int nsub = (FE.epIntegrationTANGENT) ?</span>
+<span class="pc" id="L79">                (int) (f1/(beta*sY))+1 : 1;</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (int i = 0; i &lt; lv; i++) {</span>
+<span class="fc" id="L82">            sig[i] = sig0[i] + dsig[i]*r;</span>
+<span class="fc" id="L83">            dsig[i] = (1.0 - r)*dsig[i]/nsub;</span>
+<span class="fc" id="L84">            deps[i] = (1.0 - r)*deps[i]/nsub;</span>
+        }
+        // Subincrement loop: tangent or midpoint method
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (int isub = 0; isub &lt; nsub; isub++) {</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (FE.epIntegrationTANGENT)</span>
+<span class="nc" id="L89">                 tangentStressIncrement();</span>
+<span class="fc" id="L90">            else midpoint.stressIncrement();</span>
+        }
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (int i = 0; i &lt; lv; i++)</span>
+<span class="fc" id="L93">            elm.str[ip].dStress[i] = sig[i] - sig0[i];</span>
+<span class="fc" id="L94">        elm.str[ip].dEpi = epi - epi0;</span>
+<span class="fc" id="L95">    }</span>
+
+    // Compute elastic-plastic increment by tangent method.
+    // Update stresses sig and equivalent plastic strain epi
+    private void tangentStressIncrement() {
+
+<span class="nc" id="L101">        double H = slopeH(epi);</span>
+<span class="nc" id="L102">        derivYieldFunc(sig, a);</span>
+<span class="nc" id="L103">        double dlambda = 0.0;</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        for (int i = 0; i &lt; lv; i++) {</span>
+<span class="nc" id="L105">            double s = 0.0;</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            for (int j = 0; j &lt; lv; j++) s += Emat[i][j]*a[j];</span>
+<span class="nc" id="L107">            Ea[i] = s;</span>
+<span class="nc" id="L108">            dlambda += a[i]*dsig[i];</span>
+        }
+<span class="nc" id="L110">        dlambda /= (H + 3*G);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (dlambda &lt; 0.0) dlambda = 0.0;</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        for (int i = 0; i &lt; lv; i++) {</span>
+<span class="nc" id="L113">            sig[i] += dsig[i] - dlambda*Ea[i];</span>
+<span class="nc" id="L114">            depsp[i] = dlambda*a[i];</span>
+        }
+<span class="nc" id="L116">        epi += eqPlastStrain(depsp);</span>
+
+        // Stress correction
+<span class="nc" id="L119">        double f = yieldFunction(sig, epi);</span>
+<span class="nc" id="L120">        double c1 = 0.0;</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        for (int i = 0; i &lt; lv; i++) c1 += a[i]*a[i];</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        for (int i = 0; i &lt; lv; i++) sig[i] -= a[i]*f/c1;</span>
+<span class="nc" id="L123">    }</span>
+
+    // Yield function.
+    // s - stresses,
+    // epi - equivalent plastic strain,
+    // returns  yield function value
+    private double yieldFunction(double[] s, double epi) {
+        double sm, seq;
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (stressState.equals(&quot;threed&quot;)) {</span>
+<span class="fc" id="L132">            sm = (s[0] + s[1] + s[2])/3;</span>
+<span class="fc" id="L133">            seq = Math.sqrt(3.0*(0.5*((s[0] - sm)*(s[0] - sm)</span>
+                    + (s[1] - sm)*(s[1] - sm)
+                    + (s[2] - sm)*(s[2] - sm))
+                    + s[3]*s[3] + s[4]*s[4] + s[5]*s[5]));
+        }
+        else {
+<span class="nc" id="L139">            sm = (s[0] + s[1] + s[3])/3;</span>
+<span class="nc" id="L140">            seq = Math.sqrt(3.0*(0.5*((s[0] - sm)*(s[0] - sm)</span>
+                    + (s[1] - sm)*(s[1] - sm)
+                    + (s[3] - sm)*(s[3] - sm)) + s[2]*s[2]));
+        }
+<span class="fc" id="L144">        return seq - yieldRadius(epi);</span>
+    }
+
+    // Radius of yield surface Y = sY + k*ep^m
+    private double yieldRadius(double ep) {
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (ep &lt;= 0.0) return sY;</span>
+<span class="fc" id="L150">        else return (km*Math.pow(ep, mm) + sY);</span>
+    }
+
+    // Derivatives of yield function.
+    // s - stresses (in),
+    // a - derivatives of yield function (out)
+    private void derivYieldFunc(double[] s, double[] a) {
+        double sm, seq;
+
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (stressState.equals(&quot;threed&quot;)) {</span>
+<span class="fc" id="L160">            sm = (s[0] + s[1] + s[2])/3;</span>
+<span class="fc" id="L161">            a[0] = s[0] - sm;</span>
+<span class="fc" id="L162">            a[1] = s[1] - sm;</span>
+<span class="fc" id="L163">            a[2] = s[2] - sm;</span>
+<span class="fc" id="L164">            a[3] = 2*s[3];</span>
+<span class="fc" id="L165">            a[4] = 2*s[4];</span>
+<span class="fc" id="L166">            a[5] = 2*s[5];</span>
+<span class="fc" id="L167">            seq = Math.sqrt(</span>
+                    0.5*(a[0]*a[0] + a[1]*a[1] + a[2]*a[2])
+                    + s[3]*s[3] + s[4]*s[4] + s[5]*s[5]);
+        }
+        else {
+<span class="nc" id="L172">            sm = (s[0] + s[1] + s[3])/3;</span>
+<span class="nc" id="L173">            a[0] = s[0] - sm;</span>
+<span class="nc" id="L174">            a[1] = s[1] - sm;</span>
+<span class="nc" id="L175">            a[2] = 2*s[2];</span>
+<span class="nc" id="L176">            a[3] = s[3] - sm;</span>
+<span class="nc" id="L177">            seq = Math.sqrt(0.5*(a[0]*a[0] + a[1]*a[1]</span>
+                    + a[3]*a[3]) + s[2]*s[2]);
+        }
+
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        for (int i = 0; i &lt; lv; i++)</span>
+<span class="fc" id="L182">            a[i] = 0.5*Math.sqrt(3.0)/seq*a[i];</span>
+<span class="fc" id="L183">    }</span>
+
+    // Returns slope of deformation curve
+    // epi - equivalent plastic strain
+    private double slopeH(double epi) {
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">        if (km == 0.0) return 0.0;</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        else if (mm == 1.0) return km;</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        else return (epi == 0.0) ?</span>
+<span class="nc" id="L191">                0.0 : km*mm*Math.pow(epi, mm - 1.0);</span>
+    }
+
+    // Returns equivalent plastic strain
+    // dp - pastic strains (in)
+    private double eqPlastStrain(double[] dp) {
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if (stressState.equals(&quot;threed&quot;))</span>
+<span class="nc" id="L198">            return Math.sqrt(</span>
+               (2*(dp[0]*dp[0] + dp[1]*dp[1] + dp[2]*dp[2])
+               + dp[3]*dp[3] + dp[4]*dp[4] + dp[5]*dp[5])/3.0);
+        else {
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (stressState.equals(&quot;plstress&quot;))</span>
+<span class="nc" id="L203">                dp[3] = -(dp[0] + dp[1]);</span>
+<span class="nc" id="L204">            return Math.sqrt((2*(dp[0]*dp[0] + dp[1]*dp[1]</span>
+                    + dp[3]*dp[3]) + dp[2]*dp[2])/3.0);
+        }
+    }
+
+    // Midpoint method for integration of constitutive
+    // relations for the von Mises hardening material
+<span class="fc" id="L211">    class Midpoint {</span>
+        // Strain deviator
+<span class="fc" id="L213">        double[] ed = new double[6];</span>
+        // Stress deviator
+<span class="fc" id="L215">        double[] sd = new double[6];</span>
+        // Trial stress deviator
+<span class="fc" id="L217">        double[] sdtr = new double[6];</span>
+        // Yield function derivatives
+<span class="fc" id="L219">        double[] a0 = new double[6];</span>
+
+<span class="fc" id="L221">        double[] sal = new double[6];</span>
+<span class="fc" id="L222">        double[] salbar = new double[6];</span>
+<span class="fc" id="L223">        double[] b = new double[6];</span>
+<span class="fc" id="L224">        double alpha = 0.5;</span>
+
+        // Elastic-plastic stress increment by midpoint method.
+        // Update stresses sig and
+        //    equivalent plastic strain epi
+        void stressIncrement() {
+<span class="fc" id="L230">            double SQ32 = Math.sqrt(1.5);</span>
+<span class="fc" id="L231">            double SQ23 = Math.sqrt(2./3.);</span>
+<span class="fc" id="L232">            double tolerance = 1.e-5;</span>
+            // Transform strains to tensor components
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">            if (lv == 4) deps[2] *= 0.5;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            else for (int i = 3; i &lt; 6; i++) deps[i] *= 0.5;</span>
+<span class="fc" id="L236">            double depsm = deviator(deps, ed);</span>
+<span class="fc" id="L237">            double sigm = deviator(sig, sd);</span>
+<span class="fc" id="L238">            double sigeq0 = SQ32*norm(sd);</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            for (int i = 0; i &lt; lv; i++) {</span>
+<span class="fc" id="L240">                sdtr[i] = sd[i] + 2*G*ed[i];</span>
+<span class="fc" id="L241">                a0[i] = 1.5*sd[i]/sigeq0;</span>
+            }
+<span class="fc" id="L243">            double lambda = SQ23*norm(ed);</span>
+            // Find lambda by Newton-Raphson iteration
+            double epi1, sigeq;
+            for (; ;) {
+<span class="fc bfc" id="L247" title="All 2 branches covered.">                for (int i = 0; i &lt; lv; i++)</span>
+<span class="fc" id="L248">                    sal[i] = sdtr[i] -</span>
+                            2*G*lambda*(1 - alpha)*a0[i];
+<span class="fc" id="L250">                double salmod = norm(sal);</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">                for (int i = 0; i &lt; lv; i++) {</span>
+<span class="fc" id="L252">                    salbar[i] = sal[i]/salmod;</span>
+<span class="fc" id="L253">                    b[i] = (1 - alpha)*a0[i] +</span>
+                            alpha*SQ32*salbar[i];
+                }
+<span class="fc" id="L256">                double bmod = norm(b);</span>
+<span class="fc" id="L257">                epi1 = epi + lambda*SQ23*bmod;</span>
+<span class="fc" id="L258">                sigeq = yieldRadius(epi1);</span>
+<span class="fc" id="L259">                double phi = SQ32*salmod -</span>
+                        3*G*alpha*lambda - sigeq;
+<span class="fc bfc" id="L261" title="All 2 branches covered.">                if (Math.abs(phi) &lt; tolerance*sY) break;</span>
+<span class="fc" id="L262">                double phiPrime = -2.*SQ32*G</span>
+<span class="fc" id="L263">                        *(1 - alpha)*dyadicProduct(a0, salbar)</span>
+<span class="fc" id="L264">                        - 3.*G*alpha - slopeH(epi1)*SQ23*bmod;</span>
+<span class="fc" id="L265">                double lambda1 = lambda - phi/phiPrime;</span>
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">                lambda = (lambda1 &lt;= 0.) ? 0.5*lambda:lambda1;</span>
+<span class="fc" id="L267">            }</span>
+<span class="fc" id="L268">            epi = epi1;</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">            for (int i = 0; i &lt; lv; i++)</span>
+<span class="fc" id="L270">                sd[i] = sal[i]/(1 + 3*G*alpha*lambda/sigeq);</span>
+<span class="fc" id="L271">            double dsigm = depsm*e/(1. - 2.*nu);</span>
+<span class="fc" id="L272">            stressFromDeviator(sd, sigm + dsigm, sig);</span>
+<span class="fc" id="L273">        }</span>
+
+        // Compute deviator.
+        // s - stress,
+        // d - deviator (out),
+        // returns  mean value
+        double deviator(double[] s, double[] d) {
+            double sm;
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">            if (lv == 4) {</span>
+<span class="nc" id="L282">                sm = (s[0] + s[1] + s[3])/3;</span>
+<span class="nc" id="L283">                d[0] = s[0] - sm;</span>
+<span class="nc" id="L284">                d[1] = s[1] - sm;</span>
+<span class="nc" id="L285">                d[3] = s[3] - sm;</span>
+<span class="nc" id="L286">                d[2] = s[2];</span>
+            }
+            else {
+<span class="fc" id="L289">                sm = (s[0] + s[1] + s[2])/3;</span>
+<span class="fc" id="L290">                d[0] = s[0] - sm;</span>
+<span class="fc" id="L291">                d[1] = s[1] - sm;</span>
+<span class="fc" id="L292">                d[2] = s[2] - sm;</span>
+<span class="fc" id="L293">                d[3] = s[3];</span>
+<span class="fc" id="L294">                d[4] = s[4];</span>
+<span class="fc" id="L295">                d[5] = s[5];</span>
+            }
+<span class="fc" id="L297">            return (sm);</span>
+        }
+
+        // Compute stress s = d + sm.
+        // d - deviator,
+        // sm - mean stress,
+        // s - stress (out)
+        void stressFromDeviator(double[] d, double sm,
+                                double[] s) {
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">            if (lv == 4) {</span>
+<span class="nc" id="L307">                s[0] = d[0] + sm;</span>
+<span class="nc" id="L308">                s[1] = d[1] + sm;</span>
+<span class="nc" id="L309">                s[3] = d[3] + sm;</span>
+<span class="nc" id="L310">                s[2] = d[2];</span>
+            }
+            else {
+<span class="fc" id="L313">                s[0] = d[0] + sm;</span>
+<span class="fc" id="L314">                s[1] = d[1] + sm;</span>
+<span class="fc" id="L315">                s[2] = d[2] + sm;</span>
+<span class="fc" id="L316">                s[3] = d[3];</span>
+<span class="fc" id="L317">                s[4] = d[4];</span>
+<span class="fc" id="L318">                s[5] = d[5];</span>
+            }
+<span class="fc" id="L320">        }</span>
+
+        // Returns norm = sqrt(Sij*Sij)
+        double norm(double[] s) {
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">            if (lv == 4)</span>
+<span class="nc" id="L325">                return (Math.sqrt(s[0]*s[0] + s[1]*s[1] +</span>
+                        s[3]*s[3] + 2*s[2]*s[2]));
+            else
+<span class="fc" id="L328">                return (Math.sqrt(s[0]*s[0] + s[1]*s[1] +</span>
+                        s[2]*s[2] + 2*(s[3]*s[3] + s[4]*s[4] +
+                        s[5]*s[5])));
+        }
+
+        // Returns dyadic product = aij*bij
+        double dyadicProduct(double[] a, double[] b) {
+<span class="pc bpc" id="L335" title="1 of 2 branches missed.">            if (lv == 4)</span>
+<span class="nc" id="L336">                return (a[0]*b[0] + a[1]*b[1] + a[3]*b[3] +</span>
+                        2*a[2]*b[2]);
+            else
+<span class="fc" id="L339">                return (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] +</span>
+                        2*(a[3]*b[3] + a[4]*b[4] + a[5]*b[5]));
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

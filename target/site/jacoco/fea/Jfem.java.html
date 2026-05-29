@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Jfem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">fea</a> &gt; <span class="el_source">Jfem.java</span></div><h1>Jfem.java</h1><pre class="source lang-java linenums">package fea;
+
+import elem.*;
+import model.*;
+import solver.*;
+import util.*;
+
+import java.io.*;
+
+// Main class of the finite element processor
+public class Jfem {
+
+    private static FeScanner RD;
+    private static PrintWriter PR;
+    public static String fileOut;
+
+    public static void main(String[] args) {
+
+<span class="pc bpc" id="L19" title="1 of 2 branches missed.">        if (args.length == 0) {</span>
+<span class="nc" id="L20">            System.out.println(</span>
+                   &quot;Usage: java fea.JFEM FileIn [FileOut]\n&quot;);
+<span class="nc" id="L22">            return;</span>
+        }
+<span class="fc" id="L24">        FE.main = FE.JFEM;</span>
+
+        try {
+<span class="fc" id="L27">            RD = new FeScanner(args[0]);</span>
+
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">            fileOut = (args.length==1) ? args[0]+&quot;.lst&quot; : args[1];</span>
+<span class="fc" id="L30">            PR = new FePrintWriter().getPrinter(fileOut);</span>
+
+<span class="fc" id="L32">            PR.println(&quot;fea.JFEM: FE code. Data file: &quot; + args[0]);</span>
+<span class="fc" id="L33">            System.out.println(&quot;fea.JFEM: FE code. Data file: &quot;</span>
+                    + args[0]);
+
+<span class="fc" id="L36">            new Jfem();</span>
+<span class="nc" id="L37">        } catch (FeaException e) {</span>
+<span class="nc" id="L38">            System.out.println(&quot;=== ERROR: &quot; + e.getMessage());</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">            if (PR != null) {</span>
+<span class="nc" id="L40">                PR.println(&quot;=== ERROR: &quot; + e.getMessage());</span>
+            }
+<span class="nc" id="L42">            System.exit(1);</span>
+        } finally {
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (RD != null) {</span>
+<span class="fc" id="L45">                RD.close();</span>
+            }
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            if (PR != null) {</span>
+<span class="fc" id="L48">                PR.close();</span>
+            }
+        }
+<span class="fc" id="L51">    }</span>
+
+<span class="fc" id="L53">    public Jfem () {</span>
+
+<span class="fc" id="L55">        UTIL.printDate(PR);</span>
+
+<span class="fc" id="L57">        FeModel fem = new FeModel(RD, PR);</span>
+<span class="fc" id="L58">        Element.fem = fem;</span>
+
+<span class="fc" id="L60">        fem.readData();</span>
+
+<span class="fc" id="L62">        PR.printf(&quot;\nNumber of elements    nEl = %d\n&quot;+</span>
+                  &quot;Number of nodes      nNod = %d\n&quot;+
+                  &quot;Number of dimensions nDim = %d\n&quot;,
+<span class="fc" id="L65">                  fem.nEl, fem.nNod, fem.nDim);</span>
+
+<span class="fc" id="L67">        long t0 = System.currentTimeMillis();</span>
+
+<span class="fc" id="L69">        Solver solver = Solver.newSolver(fem);</span>
+<span class="fc" id="L70">        solver.assembleGSM();</span>
+
+<span class="fc" id="L72">        PR.printf(&quot;Memory for global matrix: %7.2f MB\n&quot;,</span>
+<span class="fc" id="L73">                Solver.lengthOfGSM*8.0e-6);</span>
+
+<span class="fc" id="L75">        FeLoad load = new FeLoad(fem);</span>
+<span class="fc" id="L76">        Element.load = load;</span>
+
+<span class="fc" id="L78">        FeStress stress = new FeStress(fem);</span>
+
+        // Load step loop
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        while (load.readData( )) {</span>
+<span class="fc" id="L82">            load.assembleRHS();</span>
+<span class="fc" id="L83">            int iter = 0;</span>
+            // Equilibrium iterations
+            do {
+<span class="fc" id="L86">                iter++;</span>
+<span class="fc" id="L87">                int its = solver.solve(FeLoad.RHS);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">                if (its &gt; 0) PR.printf(</span>
+<span class="nc" id="L89">                    &quot;Solver: %d iterations\n&quot;, its);</span>
+<span class="fc" id="L90">                stress.computeIncrement();</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            } while (!stress.equilibrium(iter));</span>
+
+<span class="fc" id="L93">            stress.accumulate();</span>
+<span class="fc" id="L94">            stress.writeResults();</span>
+<span class="fc" id="L95">            PR.printf(&quot;Loadstep %s&quot;, FeLoad.loadStepName);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (iter&gt;1) PR.printf(&quot; %5d iterations, &quot; +</span>
+                &quot;Relative residual norm = %10.5f&quot;,
+<span class="fc" id="L98">                iter, FeStress.relResidNorm);</span>
+<span class="fc" id="L99">            PR.printf(&quot;\n&quot;);</span>
+<span class="fc" id="L100">        }</span>
+
+<span class="fc" id="L102">        PR.printf(&quot;\nSolution time = %10.2f s\n&quot;,</span>
+<span class="fc" id="L103">                (System.currentTimeMillis()-t0)*0.001);</span>
+<span class="fc" id="L104">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

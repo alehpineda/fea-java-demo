@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>transform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">gener</a> &gt; <span class="el_source">transform.java</span></div><h1>transform.java</h1><pre class="source lang-java linenums">package gener;
+
+import model.*;
+import util.*;
+import fea.*;
+
+// Make transformations for a specified model.
+// Input: modelName - name of the finite element model;
+// [translate axis value] - translate axis coordinates;
+// [scale axis value] - scale axis coordinates;
+// [rotate axis value] - rotate around axis by angle (degrees);
+// [mirror axis value] - mirror along axis around axis value
+public class transform {
+
+    private FeModel m;
+<span class="fc" id="L16">    enum vars {</span>
+<span class="fc" id="L17">        translate, scale, rotate, mirror, end</span>
+    }
+
+<span class="fc" id="L20">    enum elementMirror {</span>
+<span class="fc" id="L21">        quad8 {int permutation(int i) {</span>
+<span class="nc" id="L22">            int[] p = {1,8,7,6,5,4,3,2};</span>
+<span class="nc" id="L23">            return p[i]-1;}</span>
+        },
+<span class="fc" id="L25">        hex20 {int permutation(int i) {</span>
+<span class="fc" id="L26">            int[] p = {1,8,7,6,5,4,3,2, 9,12,11,10,</span>
+                       13,20,19,18,17,16,15,14};
+<span class="fc" id="L28">            return p[i]-1;}</span>
+        };
+        abstract int permutation(int i);
+    }
+
+    private vars opName;
+    private char axis;
+    private double value;
+
+<span class="fc" id="L37">    public transform() {</span>
+
+<span class="fc" id="L39">        String modelName = Jmgen.RD.next();</span>
+<span class="fc" id="L40">        Jmgen.PR.printf(&quot;Transform: %s\n&quot;, modelName);</span>
+
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (Jmgen.blocks.containsKey(modelName))</span>
+<span class="fc" id="L43">            m = Jmgen.blocks.get(modelName);</span>
+<span class="nc" id="L44">        else UTIL.errorMsg(&quot;No such mesh block: &quot; + modelName);</span>
+
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        while (Jmgen.RD.hasNext()) {</span>
+<span class="fc" id="L47">            String name = Jmgen.RD.next().toLowerCase();</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">            if (name.equals(&quot;#&quot;)) {</span>
+<span class="nc" id="L49">                Jmgen.RD.nextLine(); continue;</span>
+            }
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (name.equals(&quot;end&quot;)) break;</span>
+
+            try {
+<span class="fc" id="L54">                opName = vars.valueOf(name);</span>
+<span class="nc" id="L55">            } catch (Exception e) {</span>
+<span class="nc" id="L56">                UTIL.errorMsg(&quot;Operation name is not found: &quot;</span>
+                        + name);
+<span class="fc" id="L58">            }</span>
+
+<span class="fc" id="L60">            String Axis = Jmgen.RD.next().toLowerCase();</span>
+<span class="fc" id="L61">            axis = Axis.charAt(0);</span>
+<span class="pc bpc" id="L62" title="1 of 6 branches missed.">            if (axis!='x' &amp;&amp; axis!='y' &amp;&amp; axis!='z')</span>
+<span class="nc" id="L63">                UTIL.errorMsg(&quot;Incorrect axis: &quot; + axis);</span>
+<span class="fc" id="L64">            value = Jmgen.RD.readDouble();</span>
+<span class="fc" id="L65">            Jmgen.PR.printf(&quot;%10s  %s  %10.4f\n&quot;,</span>
+<span class="fc" id="L66">                    opName, Axis, value);</span>
+
+<span class="pc bpc" id="L68" title="1 of 5 branches missed.">            switch (opName) {</span>
+<span class="fc" id="L69">                case translate:   doTranslate();</span>
+<span class="fc" id="L70">                    break;</span>
+<span class="fc" id="L71">                case scale:       doScale();</span>
+<span class="fc" id="L72">                    break;</span>
+<span class="fc" id="L73">                case rotate:      doRotate();</span>
+<span class="fc" id="L74">                    break;</span>
+<span class="fc" id="L75">                case mirror:      doMirror();</span>
+                    break;
+            }
+<span class="fc" id="L78">        }</span>
+<span class="fc" id="L79">        Jmgen.PR.printf(&quot;Mesh &quot; + modelName +</span>
+<span class="fc" id="L80">                &quot;: nEl = %d  nNod = %d\n&quot;, m.nEl, m.nNod);</span>
+<span class="fc" id="L81">    }</span>
+
+    private static int getIntAxis(char axis) {
+<span class="fc" id="L84">        int iAxis = 0;</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (axis=='y') iAxis = 1;</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        else if (axis=='z') iAxis = 2;</span>
+<span class="fc" id="L87">        return iAxis;</span>
+    }
+
+    private void doTranslate() {
+
+<span class="pc bpc" id="L92" title="3 of 4 branches missed.">        if (m.nDim == 2 &amp;&amp; axis == 'z') return;</span>
+<span class="fc" id="L93">        int iax = getIntAxis(axis);</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        for (int i=0; i&lt;m.nNod; i++)</span>
+<span class="fc" id="L96">            m.setNodeCoord(i, iax,</span>
+<span class="fc" id="L97">                    m.getNodeCoord(i, iax) + value);</span>
+<span class="fc" id="L98">    }</span>
+
+    private void doScale() {
+
+<span class="pc bpc" id="L102" title="3 of 4 branches missed.">        if (m.nDim == 2 &amp;&amp; axis == 'z') return;</span>
+<span class="fc" id="L103">        int iax = getIntAxis(axis);</span>
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        for (int i=0; i&lt;m.nNod; i++)</span>
+<span class="fc" id="L106">            m.setNodeCoord(i, iax,</span>
+<span class="fc" id="L107">                    m.getNodeCoord(i,iax)* value);</span>
+<span class="fc" id="L108">    }</span>
+
+    private void doRotate() {
+
+<span class="pc bpc" id="L112" title="5 of 6 branches missed.">        if (m.nDim == 2 &amp;&amp; (axis=='x' || axis=='y')) return;</span>
+
+<span class="fc" id="L114">        double sina = Math.sin(Math.toRadians(value));</span>
+<span class="fc" id="L115">        double cosa = Math.cos(Math.toRadians(value));</span>
+<span class="fc" id="L116">        double a[][] = new double[3][3];</span>
+<span class="fc" id="L117">        double x[] = new double[3];</span>
+
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        if (axis=='x') {</span>
+<span class="nc" id="L120">            a[0][0]= 1;    a[0][1]= 0;    a[0][2]=0;</span>
+<span class="nc" id="L121">            a[1][0]= 0;    a[1][1]= cosa; a[1][2]=-sina;</span>
+<span class="nc" id="L122">            a[2][0]= 0;    a[2][1]= sina; a[2][2]= cosa;</span>
+        }
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        else if (axis=='y') {</span>
+<span class="nc" id="L125">            a[0][0]= cosa; a[0][1]= 0;    a[0][2]= sina;</span>
+<span class="nc" id="L126">            a[1][0]= 0;    a[1][1]= 1;    a[1][2]= 0;</span>
+<span class="nc" id="L127">            a[2][0]=-sina; a[2][1]= 0;    a[2][2]= cosa;</span>
+        }
+        else {  // around z
+<span class="fc" id="L130">            a[0][0]= cosa; a[0][1]=-sina; a[0][2]= 0;</span>
+<span class="fc" id="L131">            a[1][0]= sina; a[1][1]= cosa; a[1][2]= 0;</span>
+<span class="fc" id="L132">            a[2][0]= 0;    a[2][1]= 0;    a[2][2]= 1;</span>
+        }
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        for (int inod=0; inod&lt;m.nNod; inod++) {</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            for (int j=0; j&lt;m.nDim; j++)</span>
+<span class="fc" id="L137">                x[j] = m.getNodeCoord(inod,j);</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            for (int i=0; i&lt;m.nDim; i++) {</span>
+<span class="fc" id="L139">                double s = 0;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                for (int j=0; j&lt;m.nDim; j++) s += a[i][j]*x[j];</span>
+<span class="fc" id="L141">                m.setNodeCoord(inod, i, s);</span>
+            }
+        }
+<span class="fc" id="L144">    }</span>
+
+    private void doMirror() {
+
+<span class="pc bpc" id="L148" title="3 of 4 branches missed.">        if (m.nDim == 2 &amp;&amp; axis == 'z') return;</span>
+<span class="fc" id="L149">        int iax = getIntAxis(axis);</span>
+
+        // Mirror nodal coordinates
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        for (int i=0; i&lt;m.nNod; i++)</span>
+<span class="fc" id="L153">            m.setNodeCoord(</span>
+<span class="fc" id="L154">                    i, iax, -m.getNodeCoord(i,iax)+2*value);</span>
+
+        // Change order of element connectivities
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        for (int e=0; e&lt;m.nEl; e++) {</span>
+<span class="fc" id="L158">            elementMirror em = null;</span>
+            try {
+<span class="fc" id="L160">                em = elementMirror.valueOf(m.elems[e].name);</span>
+<span class="nc" id="L161">            } catch (Exception el) {</span>
+<span class="nc" id="L162">                UTIL.errorMsg(&quot;Mirror: element not supported &quot;</span>
+                        + m.elems[e].name);
+<span class="fc" id="L164">            }</span>
+
+<span class="fc" id="L166">            int nind = m.elems[e].ind.length;</span>
+<span class="fc" id="L167">            int[] ind = new int[nind];</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            for (int i=0; i&lt;nind; i++)</span>
+<span class="fc" id="L169">                ind[em.permutation(i)] = m.elems[e].ind[i];</span>
+<span class="fc" id="L170">            m.elems[e].setElemConnectivities(ind);</span>
+        }
+<span class="fc" id="L172">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

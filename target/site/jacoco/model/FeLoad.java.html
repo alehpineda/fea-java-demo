@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FeLoad.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">model</a> &gt; <span class="el_source">FeLoad.java</span></div><h1>FeLoad.java</h1><pre class="source lang-java linenums">package model;
+
+import fea.*;
+import elem.*;
+import util.*;
+
+import java.util.ListIterator;
+import java.util.LinkedList;
+
+// Load increment for the finite element model
+public class FeLoad extends FeLoadData  {
+
+    // Finite element model
+    private static FeModel fem;
+    ListIterator&lt;Dof&gt; itnf;
+    ListIterator&lt;ElemFaceLoad&gt; itsf;
+
+    // Construct finite element load.
+    // fem - finite element model
+<span class="fc" id="L20">    public FeLoad(FeModel fem) {</span>
+<span class="fc" id="L21">        FeLoad.fem = fem;</span>
+<span class="fc" id="L22">        RD = FeModel.RD;</span>
+
+<span class="fc" id="L24">        spLoad = new double[fem.nEq];</span>
+<span class="fc" id="L25">        dpLoad = new double[fem.nEq];</span>
+<span class="fc" id="L26">        dhLoad = new double[fem.nEq];</span>
+<span class="fc" id="L27">        sDispl = new double[fem.nEq];</span>
+<span class="fc" id="L28">        dDispl = new double[fem.nEq];</span>
+<span class="fc" id="L29">        RHS    = new double[fem.nEq];</span>
+
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (fem.thermalLoading) {</span>
+<span class="fc" id="L32">            dtemp = new double[fem.nNod];</span>
+        }
+<span class="fc" id="L34">    }</span>
+
+    // Read data describing load increment.
+    // returns  true if load data has been read
+    public boolean readData( ) {
+
+<span class="fc" id="L40">        return readDataFile(RD, true);</span>
+    }
+
+    // Read data fragment for load increment.
+    // newLoad = true - beginning of new load,
+    //         = false - continuation of load.
+    // returns  true if load data has been read
+    private boolean readDataFile(FeScanner es,
+                                 boolean newLoad) {
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (newLoad) {</span>
+<span class="fc" id="L50">            scaleLoad = 0;</span>
+<span class="fc" id="L51">            nodForces = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L52">            itnf = nodForces.listIterator(0);</span>
+<span class="fc" id="L53">            surForces = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L54">            itsf = surForces.listIterator(0);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (fem.thermalLoading) {</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                for (int i = 0; i &lt; dtemp.length; i++)</span>
+<span class="fc" id="L57">                    dtemp[i] = 0.0;</span>
+            }
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            for (int i=0; i&lt;dDispl.length; i++) dDispl[i] = 0;</span>
+        }
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (!es.hasNext()) return false;  // No load data</span>
+
+<span class="fc" id="L64">        vars name = null;</span>
+        String s;
+
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        while (es.hasNext()) {</span>
+<span class="fc" id="L68">            String varName = es.next();</span>
+<span class="fc" id="L69">            String varNameLower = varName.toLowerCase();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            if (varName.equals(&quot;#&quot;)) {</span>
+<span class="fc" id="L71">                es.nextLine(); continue; }</span>
+            try {
+<span class="fc" id="L73">                name = vars.valueOf(varNameLower);</span>
+<span class="nc" id="L74">            } catch (Exception e) {</span>
+<span class="nc" id="L75">                UTIL.errorMsg(</span>
+                    &quot;Variable name is not found: &quot; + varName);
+<span class="fc" id="L77">            }</span>
+
+<span class="pc bpc" id="L79" title="4 of 11 branches missed.">            switch (name) {</span>
+
+            case loadstep:
+<span class="fc" id="L82">                loadStepName = es.next();</span>
+<span class="fc" id="L83">                break;</span>
+
+            case scaleload:
+<span class="fc" id="L86">                scaleLoad = es.readDouble();</span>
+<span class="fc" id="L87">                break;</span>
+
+            case residtolerance:
+<span class="fc" id="L90">                residTolerance = es.readDouble();</span>
+<span class="fc" id="L91">                break;</span>
+
+            case maxiternumber:
+<span class="nc" id="L94">                maxIterNumber = es.readInt();</span>
+<span class="nc" id="L95">                break;</span>
+
+            case nodforce:
+<span class="nc" id="L98">                readNodalForces(es);</span>
+<span class="nc" id="L99">                break;</span>
+
+            case surforce:
+<span class="fc" id="L102">                readSurForces(es);</span>
+<span class="fc" id="L103">                break;</span>
+
+            case boxsurforce:
+<span class="fc" id="L106">                createBoxSurForces(es);</span>
+<span class="fc" id="L107">                break;</span>
+
+            case nodtemp:
+<span class="fc" id="L110">                dtemp = new double[fem.nNod];</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                for (int i = 0; i &lt; fem.nNod; i++)</span>
+<span class="fc" id="L112">                    dtemp[i] = es.readDouble();</span>
+<span class="fc" id="L113">                break;</span>
+
+            case includefile:
+<span class="nc" id="L116">                s = es.next();</span>
+<span class="nc" id="L117">                FeScanner R = new FeScanner(es.resolveSibling(s));</span>
+<span class="nc" id="L118">                readDataFile(R, false);</span>
+<span class="nc" id="L119">                break;</span>
+
+            case end:
+<span class="fc" id="L122">                return true;</span>
+            }
+<span class="fc" id="L124">        }</span>
+<span class="nc" id="L125">        return true;</span>
+    }
+
+
+    // Read data for specified nodal forces
+    private void readNodalForces(FeScanner es) {
+
+<span class="nc" id="L132">        String s = es.next().toLowerCase();</span>
+<span class="nc" id="L133">        int idf = UTIL.direction(s);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (idf == -1) UTIL.errorMsg(&quot;nodForce&quot; +</span>
+            &quot; direction should be x/y/z. Specified:&quot;+s);
+
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (!es.hasNextDouble()) UTIL.errorMsg(</span>
+<span class="nc" id="L138">            &quot;nodForce value is not a double: &quot; + es.next());</span>
+<span class="nc" id="L139">        double vd = es.nextDouble();</span>
+
+<span class="nc" id="L141">        itnf = es.readNumberList(itnf, idf, fem.nDim, vd);</span>
+<span class="nc" id="L142">    }</span>
+
+    // Read data for surface forces (element face loading):
+    // direction, iel, nFaceNodes, faceNodes, forcesAtNodes.
+    private void readSurForces(FeScanner es) {
+
+<span class="fc" id="L148">        String s = es.next().toLowerCase();</span>
+<span class="fc" id="L149">        int dir = UTIL.direction(s);</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (dir == -1) UTIL.errorMsg(&quot;surForce&quot; +</span>
+           &quot; direction should be x/y/z/n. Specified:&quot;+s);
+<span class="fc" id="L152">        int iel = es.readInt();</span>
+<span class="fc" id="L153">        int nFaceNodes = es.readInt();</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        for (int i=0; i&lt;nFaceNodes; i++)</span>
+<span class="fc" id="L155">            iw[i] = es.readInt();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        for (int i=0; i&lt;nFaceNodes; i++)</span>
+<span class="fc" id="L157">            dw[i] = es.readDouble();</span>
+<span class="fc" id="L158">        itsf.add(new ElemFaceLoad(iel-1,nFaceNodes,dir,iw,dw));</span>
+<span class="fc" id="L159">    }</span>
+
+    // Create data for distributed surface load
+    // specified inside a box
+    private void createBoxSurForces(FeScanner es) {
+        int[][] faces;
+<span class="fc" id="L165">        String s = es.next().toLowerCase();</span>
+<span class="fc" id="L166">        int dir = UTIL.direction(s);</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (dir == -1) UTIL.errorMsg(&quot;boxSurForce&quot; +</span>
+            &quot; direction should be x/y/z/n. Specified:&quot; + s);
+
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (!es.hasNextDouble()) UTIL.errorMsg(</span>
+<span class="nc" id="L171">            &quot;boxSurForce value is not a double: &quot; + es.next());</span>
+<span class="fc" id="L172">        double force = es.nextDouble();</span>
+
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        for (int i = 0; i &lt; 2; i++)</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">            for (int j = 0; j &lt; fem.nDim; j++)</span>
+<span class="fc" id="L176">                box[i][j] = es.readDouble();</span>
+
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        for (int iel=0; iel&lt;fem.nEl; iel++) {</span>
+<span class="fc" id="L179">            Element el = fem.elems[iel];</span>
+<span class="fc" id="L180">            faces = el.getElemFaces();</span>
+            FACE:
+<span class="fc bfc" id="L182" title="All 2 branches covered.">            for (int[] face : faces) {</span>
+<span class="fc" id="L183">                int nNodes = face.length;</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">                for (int inod = 0; inod &lt; nNodes; inod++)</span>
+<span class="fc" id="L185">                    iw[inod] = 0;</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                for (int inod = 0; inod &lt; nNodes; inod++) {</span>
+<span class="fc" id="L187">                    int iGl = el.ind[face[inod]];</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                    if (iGl &gt; 0) {</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                        for (int j = 0; j &lt; fem.nDim; j++) {</span>
+<span class="fc" id="L190">                            double x =</span>
+<span class="fc" id="L191">                                    fem.getNodeCoord(iGl-1,j);</span>
+<span class="pc bpc" id="L192" title="1 of 4 branches missed.">                            if (x &lt; box[0][j] || x &gt; box[1][j])</span>
+<span class="nc" id="L193">                                continue FACE;</span>
+                        }
+<span class="fc" id="L195">                        iw[inod] = iGl;</span>
+                    }
+                }
+<span class="fc" id="L198">                itsf.add(</span>
+                    new ElemFaceLoad(iel,nNodes,dir,iw,force));
+            }
+        }
+<span class="fc" id="L202">    }</span>
+
+    // Assemble right-hand side of the global equation system
+    public void assembleRHS() {
+
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (scaleLoad != 0.0) {</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            for (int i = 0; i &lt; fem.nEq; i++) {</span>
+<span class="fc" id="L209">                dpLoad[i] *= scaleLoad;</span>
+<span class="fc" id="L210">                dhLoad[i] *= scaleLoad;</span>
+<span class="fc" id="L211">                RHS  [i] = dpLoad[i] + dhLoad[i];</span>
+            }
+<span class="fc" id="L213">            return;</span>
+        }
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        for (int i = 0; i &lt; fem.nEq; i++) {</span>
+<span class="fc" id="L216">            dpLoad[i] = 0.0;</span>
+<span class="fc" id="L217">            dhLoad[i] = 0.0;</span>
+        }
+
+        // Nodal forces specified directly
+<span class="fc" id="L221">        itnf = nodForces.listIterator(0);</span>
+        Dof d;
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">        while (itnf.hasNext()) {</span>
+<span class="nc" id="L224">            d = itnf.next();</span>
+<span class="nc" id="L225">            dpLoad[d.dofNum-1] = d.value;</span>
+        }
+
+        // Surface load at element faces
+<span class="fc" id="L229">        itsf = surForces.listIterator(0);</span>
+        ElemFaceLoad efl;
+        Element elm;
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        while (itsf.hasNext()) {</span>
+<span class="fc" id="L233">            efl = itsf.next();</span>
+<span class="fc" id="L234">            elm = fem.elems[efl.iel];</span>
+<span class="fc" id="L235">            elm.setElemXy();</span>
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">            if (elm.equivFaceLoad(efl)==-1)</span>
+<span class="nc" id="L237">                UTIL.errorMsg(&quot;surForce&quot; +</span>
+                    &quot; does not match any face of element: &quot;
+                    + efl.iel);
+<span class="fc" id="L240">            elm.assembleElemVector(Element.evec,dpLoad);</span>
+        }
+
+        // Temperature field
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        if (fem.thermalLoading) {</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">            for (int iel = 0; iel &lt; fem.nEl; iel++) {</span>
+<span class="fc" id="L246">                elm = fem.elems[iel];</span>
+<span class="fc" id="L247">                elm.setElemXyT();</span>
+<span class="fc" id="L248">                elm.thermalVector();</span>
+<span class="fc" id="L249">                elm.assembleElemVector(Element.evec,dhLoad);</span>
+            }
+        }
+
+        // Right-hand side = actual load + fictitious load
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        for (int i = 0; i &lt; fem.nEq; i++)</span>
+<span class="fc" id="L255">            RHS[i] = dpLoad[i] + dhLoad[i];</span>
+
+        // Displacement boundary conditions for right-hand side
+<span class="fc" id="L258">        ListIterator&lt;Dof&gt; itdbc = fem.defDs.listIterator(0);</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">        while (itdbc.hasNext()) {</span>
+<span class="fc" id="L260">            d = itdbc.next();</span>
+<span class="fc" id="L261">            RHS[d.dofNum-1] = FE.bigValue * d.value;</span>
+        }
+<span class="fc" id="L263">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

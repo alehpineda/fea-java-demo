@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FeModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">model</a> &gt; <span class="el_source">FeModel.java</span></div><h1>FeModel.java</h1><pre class="source lang-java linenums">package model;
+
+import elem.*;
+import material.*;
+import util.*;
+import solver.*;
+
+import java.io.PrintWriter;
+import java.util.ListIterator;
+
+// Description of the finite element model
+public class FeModel extends FeModelData {
+
+<span class="fc" id="L14">    static private int elCon[] = new int[20];</span>
+<span class="fc" id="L15">    static private double box[][] = new double[2][3];</span>
+    ListIterator&lt;Dof&gt; it;
+
+    // Construct finite element model.
+    // RD - data scanner, PR - print writer.
+<span class="fc" id="L20">    public FeModel(FeScanner RD, PrintWriter PR) {</span>
+<span class="fc" id="L21">        FeModelData.RD = RD;</span>
+<span class="fc" id="L22">        FeModelData.PR = PR;</span>
+<span class="fc" id="L23">    }</span>
+
+    // Read data for a finite element model
+    public void readData() {
+<span class="fc" id="L27">        readDataFile(RD);</span>
+<span class="fc" id="L28">    }</span>
+
+    private void readDataFile(FeScanner es) {
+
+<span class="fc" id="L32">        vars name = null;</span>
+        String s;
+        Material mat;
+<span class="fc" id="L35">        it = defDs.listIterator(0);</span>
+
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        while (es.hasNext()) {</span>
+<span class="fc" id="L38">            varName = es.next();</span>
+<span class="fc" id="L39">            String varname = varName.toLowerCase();</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if (varName.equals(&quot;#&quot;)) {es.nextLine(); continue;}</span>
+            try {
+<span class="fc" id="L42">                name = vars.valueOf(varname);</span>
+<span class="nc" id="L43">            } catch (Exception e) {</span>
+<span class="nc" id="L44">                UTIL.errorMsg(</span>
+                    &quot;Variable name is not found: &quot;+varName);
+<span class="fc" id="L46">            }</span>
+
+<span class="pc bpc" id="L48" title="2 of 15 branches missed.">            switch (name) {</span>
+
+<span class="fc" id="L50">            case nel:    nEl = es.readInt();</span>
+<span class="fc" id="L51">                break;</span>
+
+<span class="fc" id="L53">            case nnod:   nNod = es.readInt();</span>
+<span class="fc" id="L54">                break;</span>
+
+<span class="fc" id="L56">            case ndim:   nDim = es.readInt();</span>
+<span class="fc" id="L57">                nDf = nDim;</span>
+<span class="fc" id="L58">                break;</span>
+
+            case stressstate:
+<span class="fc" id="L61">                s = es.next().toLowerCase();</span>
+                try {
+<span class="fc" id="L63">                    stressState = StrStates.valueOf(s);</span>
+<span class="nc" id="L64">                } catch (Exception e) {</span>
+<span class="nc" id="L65">                    UTIL.errorMsg(</span>
+                        &quot;stressState has forbidden value: &quot;+s);
+<span class="fc" id="L67">                }</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">                if (stressState != StrStates.threed)</span>
+<span class="fc" id="L69">                      nDim = nDf = 2;</span>
+<span class="nc" id="L70">                else  nDim = nDf = 3;</span>
+<span class="nc" id="L71">                break;</span>
+
+            case physlaw:
+<span class="fc" id="L74">                s = es.next().toLowerCase();</span>
+                try {
+<span class="fc" id="L76">                    physLaw = PhysLaws.valueOf(s);</span>
+<span class="nc" id="L77">                } catch (Exception e) {</span>
+<span class="nc" id="L78">                    UTIL.errorMsg(</span>
+                            &quot;physLaw has forbidden value: &quot;+s);
+<span class="fc" id="L80">                }</span>
+<span class="nc" id="L81">                break;</span>
+
+            case solver:
+<span class="nc" id="L84">                s = es.next().toLowerCase();</span>
+                try {
+<span class="nc" id="L86">                    Solver.solver = Solver.Solvers.valueOf(s);</span>
+<span class="nc" id="L87">                } catch (Exception e) {</span>
+<span class="nc" id="L88">                    UTIL.errorMsg(</span>
+                            &quot;solver has forbidden value: &quot;+s);
+<span class="nc" id="L90">                }</span>
+<span class="nc" id="L91">                break;</span>
+
+            case elcon:
+<span class="fc" id="L94">                readElemData(es);</span>
+<span class="fc" id="L95">                break;</span>
+
+            case nodcoord:
+<span class="pc bpc" id="L98" title="2 of 4 branches missed.">                if (nNod == 0 || nDim == 0)</span>
+<span class="nc" id="L99">                    UTIL.errorMsg(&quot;nNod and nDim should be&quot;</span>
+                            +&quot; specified before nodCoord&quot;);
+<span class="fc" id="L101">                nEq = nNod * nDim;</span>
+                // Nodal coordinates
+<span class="fc" id="L103">                newCoordArray();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                for (int i = 0; i &lt; nNod; i++)</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                    for (int j = 0; j &lt; nDim; j++)</span>
+<span class="fc" id="L106">                        setNodeCoord(i, j, es.readDouble());</span>
+<span class="fc" id="L107">                break;</span>
+
+            case material:
+<span class="fc" id="L110">                String matname = es.next();</span>
+<span class="fc" id="L111">                mat = Material.newMaterial(physLaw.toString(),</span>
+<span class="fc" id="L112">                                      stressState.toString());</span>
+<span class="fc" id="L113">                double e = es.readDouble();</span>
+<span class="fc" id="L114">                double nu = es.readDouble();</span>
+<span class="fc" id="L115">                double alpha = es.readDouble();</span>
+<span class="fc" id="L116">                mat.setElasticProp(e, nu, alpha);</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                if (physLaw == PhysLaws.elplastic) {</span>
+<span class="fc" id="L118">                    double sY = es.readDouble();</span>
+<span class="fc" id="L119">                    double km = es.readDouble();</span>
+<span class="fc" id="L120">                    double mm = es.readDouble();</span>
+<span class="fc" id="L121">                    mat.setPlasticProp(sY, km, mm);</span>
+                }
+<span class="fc" id="L123">                materials.put(matname, mat);</span>
+<span class="fc" id="L124">                break;</span>
+
+            case constrdispl:
+<span class="fc" id="L127">                readConstrDisplacements(es);</span>
+<span class="fc" id="L128">                break;</span>
+
+            case boxconstrdispl:
+<span class="fc" id="L131">                createBoxConstrDisplacements(es);</span>
+<span class="fc" id="L132">                break;</span>
+
+            case thermalloading:
+<span class="fc" id="L135">                s = es.next();</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                if (s.toLowerCase().equals(&quot;y&quot;))</span>
+<span class="fc" id="L137">                    thermalLoading = true;</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                else if (s.toLowerCase().equals(&quot;n&quot;))</span>
+<span class="nc" id="L139">                    thermalLoading = false;</span>
+                else
+<span class="nc" id="L141">                    UTIL.errorMsg(&quot;thermalLoading should be&quot;</span>
+                            + &quot; y/n. Specified: &quot; + s);
+<span class="nc" id="L143">                break;</span>
+
+            case includefile:
+<span class="fc" id="L146">                s = es.next();</span>
+<span class="fc" id="L147">                FeScanner R = new FeScanner(es.resolveSibling(s));</span>
+<span class="fc" id="L148">                readDataFile(R);</span>
+<span class="fc" id="L149">                break;</span>
+
+<span class="fc" id="L151">            case end:  return;</span>
+            }
+<span class="fc" id="L153">        }</span>
+<span class="nc" id="L154">    }</span>
+
+    // Read element type, material and connectivities
+    // for all elements
+    private void readElemData(FeScanner es) {
+
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        if (nEl == 0) UTIL.errorMsg (</span>
+                &quot;nEl should be defined before elCon&quot;);
+<span class="fc" id="L162">        elems = new Element[nEl];</span>
+
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        for (int iel = 0; iel &lt; nEl; iel++) {</span>
+            // Element type
+<span class="fc" id="L166">            String s = es.next().toLowerCase();</span>
+<span class="fc" id="L167">            elems[iel] = Element.newElement(s);</span>
+            // Element material
+<span class="fc" id="L169">            String elMat = es.next();</span>
+<span class="fc" id="L170">            elems[iel].setElemMaterial(elMat);</span>
+            // Element connectivities
+<span class="fc" id="L172">            int nind = elems[iel].ind.length;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">            for (int i = 0; i &lt; nind; i++) {</span>
+<span class="fc" id="L174">                elCon[i] = es.readInt();</span>
+            }
+<span class="fc" id="L176">            elems[iel].setElemConnectivities(elCon,nind);</span>
+        }
+<span class="fc" id="L178">    }</span>
+
+    // Read data for specified constrained displacements
+    private void readConstrDisplacements(FeScanner es) {
+<span class="fc" id="L182">        String s = es.next().toLowerCase();</span>
+<span class="fc" id="L183">        int idf = UTIL.direction(s);</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        if (idf == -1) UTIL.errorMsg(&quot;constrDispl direction&quot;+</span>
+                &quot; should be x/y/z. Specified:&quot;+s);
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">        if (!es.hasNextDouble())</span>
+<span class="nc" id="L187">            UTIL.errorMsg(&quot;constrDispl value is not a double: &quot;</span>
+<span class="nc" id="L188">                    +es.next());</span>
+<span class="fc" id="L189">        double vd = es.nextDouble();</span>
+<span class="fc" id="L190">        it = es.readNumberList(it, idf, nDim, vd);</span>
+<span class="fc" id="L191">    }</span>
+
+    // Create data for constrained displacements
+    // specified inside a box
+    private void createBoxConstrDisplacements(FeScanner es) {
+<span class="fc" id="L196">        String s = es.next().toLowerCase();</span>
+<span class="fc" id="L197">        int idf = UTIL.direction(s);</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        if (idf == -1)</span>
+<span class="nc" id="L199">            UTIL.errorMsg(&quot;boxConstrDispl direction should be&quot;</span>
+                    +&quot; x/y/z. Specified:&quot;+s);
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        if (!es.hasNextDouble())</span>
+<span class="nc" id="L202">            UTIL.errorMsg(&quot;boxConstrDispl value is not&quot;</span>
+<span class="nc" id="L203">                    + &quot; a double: &quot; + es.next());</span>
+<span class="fc" id="L204">        double vd = es.nextDouble();</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        for (int i = 0; i &lt; 2; i++)</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">            for (int j=0; j&lt;nDim; j++)</span>
+<span class="fc" id="L207">                box[i][j] = es.readDouble();</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        node: for (int i = 0; i &lt; nNod; i++) {</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">            for (int j = 0; j &lt; nDim; j++) {</span>
+<span class="fc" id="L210">                double x = getNodeCoord(i,j);</span>
+<span class="pc bpc" id="L211" title="1 of 4 branches missed.">                if (x&lt;box[0][j] || x&gt;box[1][j]) continue node;</span>
+            }
+<span class="fc" id="L213">            it.add(new Dof(nDim *i + idf, vd));</span>
+        }
+<span class="fc" id="L215">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
