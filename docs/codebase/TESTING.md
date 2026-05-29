@@ -4,16 +4,12 @@
 
 ### 1) Test Stack and Commands
 
-- Primary test framework: **None** – no test framework present
-- Assertion/mocking tools: None
+- Primary test framework: **JUnit 5** (`org.junit.jupiter`)
+- Assertion/mocking tools: AssertJ; Mockito is available as a test dependency
 - Commands:
 
-```bash
-# No test commands exist yet
-# Target state (after modernization):
-mvn test
-mvn verify   # includes JaCoCo coverage report
-```
+    mvn test
+    mvn verify   # includes JaCoCo coverage report and checks
 
 ### 2) Test Layout
 
