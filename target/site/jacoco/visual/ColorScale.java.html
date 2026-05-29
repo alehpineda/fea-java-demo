@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ColorScale.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">visual</a> &gt; <span class="el_source">ColorScale.java</span></div><h1>ColorScale.java</h1><pre class="source lang-java linenums">package visual;
+
+import javafx.scene.image.WritableImage;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.paint.Color;
+
+/**
+ * Produces a 1-D colour-scale image used as a contour texture.
+ *
+ * &lt;p&gt;The colour ramp runs Magenta → Blue → Cyan → Green → Yellow → Red
+ * across {@link VisData#textureSize} horizontal pixels.
+ * Each of the {@link VisData#nContours} contour bands is painted as a
+ * uniform block of pixels.&lt;/p&gt;
+ */
+<span class="nc" id="L15">class ColorScale {</span>
+
+    /**
+     * Returns a {@link WritableImage} of size
+     * {@code textureSize × 1} containing the colour-scale ramp.
+     * The image is used as the diffuse map of the surface
+     * {@link javafx.scene.paint.PhongMaterial}.
+     *
+     * @return colour-scale image
+     */
+    WritableImage getImage() {
+
+<span class="nc" id="L27">        int size = VisData.textureSize;</span>
+<span class="nc" id="L28">        WritableImage img = new WritableImage(size, 1);</span>
+<span class="nc" id="L29">        PixelWriter pw = img.getPixelWriter();</span>
+
+<span class="nc" id="L31">        double delta = (double) size / VisData.nContours;</span>
+<span class="nc" id="L32">        int n2 = 0;</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        for (int i = 0; i &lt; VisData.nContours; i++) {</span>
+<span class="nc" id="L34">            int n1 = n2;</span>
+<span class="nc" id="L35">            n2 = (int) ((i + 1) * delta + 0.5);</span>
+<span class="nc" id="L36">            int argb = computeScaleColor(1.0 / VisData.nContours * (i + 0.5));</span>
+<span class="nc" id="L37">            int r = (argb &gt;&gt; 16) &amp; 0xFF;</span>
+<span class="nc" id="L38">            int g = (argb &gt;&gt;  8) &amp; 0xFF;</span>
+<span class="nc" id="L39">            int b =  argb        &amp; 0xFF;</span>
+<span class="nc" id="L40">            Color c = Color.rgb(r, g, b);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            for (int j = n1; j &lt; n2; j++) {</span>
+<span class="nc" id="L42">                pw.setColor(j, 0, c);</span>
+            }
+        }
+<span class="nc" id="L45">        return img;</span>
+    }
+
+    /**
+     * Computes the ARGB colour for a normalised position {@code v} in
+     * the colour ramp.
+     *
+     * &lt;p&gt;Ramp knots (v → RGB):
+     * 0.0 = (1,0,1) magenta; 0.2 = (0,0,1) blue;
+     * 0.4 = (0,1,1) cyan;    0.6 = (0,1,0) green;
+     * 0.8 = (1,1,0) yellow;  1.0 = (1,0,0) red.&lt;/p&gt;
+     *
+     * @param v normalised position in [0, 1]
+     * @return packed ARGB integer (alpha = 0xFF)
+     */
+    static int computeScaleColor(double v) {
+
+        double R, G, B;
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (v &lt; 0.2) {</span>
+<span class="nc" id="L64">            R = 1 - 5 * v;</span>
+<span class="nc" id="L65">            G = 0;</span>
+<span class="nc" id="L66">            B = 1;</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        } else if (v &lt; 0.4) {</span>
+<span class="nc" id="L68">            R = 0;</span>
+<span class="nc" id="L69">            G = 5 * (v - 0.2);</span>
+<span class="nc" id="L70">            B = 1;</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        } else if (v &lt; 0.6) {</span>
+<span class="nc" id="L72">            R = 0;</span>
+<span class="nc" id="L73">            G = 1;</span>
+<span class="nc" id="L74">            B = 1 - 5 * (v - 0.4);</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        } else if (v &lt; 0.8) {</span>
+<span class="nc" id="L76">            R = 5 * (v - 0.6);</span>
+<span class="nc" id="L77">            G = 1;</span>
+<span class="nc" id="L78">            B = 0;</span>
+        } else {
+<span class="nc" id="L80">            R = 1;</span>
+<span class="nc" id="L81">            G = 1 - 5 * (v - 0.8);</span>
+<span class="nc" id="L82">            B = 0;</span>
+        }
+<span class="nc" id="L84">        int iR = (int) (R * 255 + 0.5);</span>
+<span class="nc" id="L85">        int iG = (int) (G * 255 + 0.5);</span>
+<span class="nc" id="L86">        int iB = (int) (B * 255 + 0.5);</span>
+<span class="nc" id="L87">        return (0xFF &lt;&lt; 24) | (iR &lt;&lt; 16) | (iG &lt;&lt; 8) | iB;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,48 +1,33 @@
 # FEA Java Demo
 
-A legacy finite element analysis (FEA) solver, mesh generator, and visualization codebase modernized to build on Java 17 with Maven.
+A legacy finite element analysis (FEA) solver, mesh generator, and visualization
+codebase fully modernized to Java 25 with Maven.
 
 ## Project description
 
-The repository contains three legacy entry points:
-- `fea.Jfem` - finite element solver
-- `fea.Jmgen` - mesh generator
-- `fea.Jvis` - legacy visualization applet (kept in source, excluded from the Java 17 build)
+Three executable entry points:
 
-The modernization keeps the original numerical behavior while adding:
-- a Maven build targeting Java 17
-- JUnit 5 regression and unit tests
-- JaCoCo coverage reporting and enforcement for the modernized utility/material packages
-- generic collections, safer exception handling, and explicit generator command registration
+| Entry point | Purpose |
+|---|---|
+| `fea.Jfem` | Finite element solver |
+| `fea.Jmgen` | Mesh generator |
+| `fea.Jvis` | Interactive 3D visualization (JavaFX) |
+
+Numerical core: second-order quadratic isoparametric elements — quad8 (2D) and hex20 (3D).
 
 ## Requirements
 
-- Java 17+
+- Java 25 (JDK 25+)
 - Maven 3.9+
 
-## Repository layout
-
-- `src/main/java/` - Maven production sources
-- `src/test/java/` - JUnit 5 test suite
-- `src/main/resources/` - Maven resources
-- `src/` - retained legacy source layout for reference during migration
-- `example01/` to `example04/` - regression examples and golden outputs
-
-## Build
+## Build & test
 
 ```bash
+# Compile, run all 32 JUnit 5 tests, enforce JaCoCo coverage, produce report
 mvn clean verify
 ```
 
-## Test
-
-```bash
-mvn test
-```
-
-## Coverage report
-
-After a successful build, open:
+Coverage report (line coverage ≥ 90 % for `util` and `material` packages):
 
 ```text
 target/site/jacoco/index.html
@@ -50,44 +35,57 @@ target/site/jacoco/index.html
 
 ## Running examples
 
-Compile first:
-
 ```bash
+# Compile (skip tests for speed)
 mvn -q -DskipTests compile
-```
 
-Run the solver on example 01:
-
-```bash
+# Finite element solver — example 01 (plane stress, 2 elements)
 java -cp target/classes fea.Jfem example01/f.fem example01/out.lst
-```
 
-Run the solver on example 02:
-
-```bash
+# Finite element solver — example 02 (elastic-plastic)
 java -cp target/classes fea.Jfem example02/f.fem example02/out.lst
-```
 
-Run the mesh generator on example 04:
-
-```bash
+# Mesh generator — example 04 (3D plate with central hole)
 java -cp target/classes fea.Jmgen example04/hole3d.gen example04/hole3d.gen.lst
 ```
 
-The generator now resolves included and generated files relative to the input script location, which makes Maven/Surefire-based execution reliable.
+## Interactive 3D visualization
+
+The visualizer requires a display and the JavaFX runtime. Launch via Maven for automatic module-path setup:
+
+```bash
+# example03 provides a pre-solved cube mesh for visualization
+mvn javafx:run -Djavafx.args=example03/cube.vis
+```
+
+Or directly (JavaFX must be on the module path):
+
+```bash
+java --module-path /path/to/javafx-sdk/lib --add-modules javafx.controls,javafx.graphics \
+     -cp target/classes fea.Jvis example03/cube.vis
+```
+
+Mouse controls: **left-drag** to orbit, **right-drag** to pan, **scroll** to zoom.
+
+## Repository layout
+
+```
+src/main/java/        Maven production sources (all packages, including visual/)
+src/test/java/        JUnit 5 test suite
+example01/–example04/ Regression fixtures and golden outputs
+docs/codebase/        Architecture, stack, testing and concerns documentation
+```
 
 ## Migration notes
 
-- The Maven build targets Java 17 today.
-- Java 25 follow-up work is documented in `MIGRATION.md`.
-- The legacy visualization stack (`Applet` + Java 3D) remains in the repository but is excluded from compilation; see `VISUALIZATION.md`.
-- `UTIL.errorMsg()` now throws `util.FeaException` so tests can exercise failure paths without terminating the JVM.
-- `Jmgen` now uses an explicit command registry instead of deprecated reflective construction.
-- Legacy numerical kernels were preserved; behavior is guarded with regression tests against the shipped example outputs.
+- Build targets Java 25 (`maven.compiler.release=25`).
+- Visualization migrated from `Applet` + Java 3D → `javafx.application.Application` + JavaFX 3D.
+- `UTIL.errorMsg()` throws `util.FeaException` instead of calling `System.exit()`.
+- `Jmgen` uses an explicit `JmgenRegistry` instead of deprecated reflective construction.
+- All numerical kernels are preserved; behavior is guarded by regression tests against the shipped examples.
+- See `MIGRATION.md` for the full change history and `VISUALIZATION.md` for JavaFX migration details.
 
-## Breaking changes from legacy
+## CI
 
-- The supported build path is now Maven rather than `jc.bat`.
-- Solver and generator failures now raise `FeaException` internally and only exit at the CLI boundary.
-- Visualization is not part of the Java 17 build.
-- Source files are compiled from `src/main/java/`; the original `src/` tree is retained only as a reference copy.
+GitHub Actions runs `mvn --no-transfer-progress clean verify` on every push and pull request using Java 25 (Eclipse Temurin). See `.github/workflows/ci.yml`.
+

@@ -3,24 +3,35 @@ package visual;
 import model.*;
 import util.*;
 import elem.Element;
+import javafx.scene.paint.Color;
 
-import javax.vecmath.*;
-
+/**
+ * Global configuration and shared data for the FEA visualizer.
+ *
+ * <p>All fields are package-private statics so that the visualizer
+ * sub-classes ({@link J3dScene}, {@link SurfaceSubGeometry}, etc.) can
+ * read them without additional getter boilerplate.  The class is never
+ * instantiated; it is a pure data namespace.</p>
+ */
 public class VisData {
 
+    /** The loaded finite-element model. */
     static FeModel fem;
-    // Global vectot of nodal displacements
-    static double displ[];
+    /** Global vector of nodal displacements (size = nNod * nDf). */
+    static double[] displ;
 
-    // Input data names
+    /** Keywords accepted in the visualizer input file. */
     enum vars {
         meshfile, resultfile, parm, showedges, shownodes,
         ndivmin, ndivmax, fmin, fmax, ncontours, deformscale,
         end
     }
 
-    // Parameters that can be visualized: displacements,
-    // stresses, principal stresses and equivalent stress
+    /**
+     * Result quantities that can be contour-plotted.
+     * Displacements: ux, uy, uz.  Stresses: sx … szx.
+     * Principal / equivalent: s1, s2, s3, si, s13.
+     */
     enum parms {
         ux, uy, uz, sx, sy, sz, sxy, syz, szx,
         s1, s2, s3, si, s13, none
@@ -35,25 +46,33 @@ public class VisData {
     static double fMin = 0, fMax = 0;
     static int nContours = 256;
 
-    static float offset = 500.0f;
-    static float offsetFactor = 1.0f;
-
-    static Color3f bgColor     = new Color3f(1.0f, 1.0f, 1.0f);
-    static Color3f modelColor  = new Color3f(0.5f, 0.5f, 0.9f);
-    static Color3f surTexColor = new Color3f(0.8f, 0.8f, 0.8f);
-    static Color3f edgeColor   = new Color3f(0.2f, 0.2f, 0.2f);
-    static Color3f nodeColor   = new Color3f(0.2f, 0.2f, 0.2f);
-
-    // Size of the color gradation strip
+    /** Number of pixels in the 1-D colour-scale texture strip. */
     static int textureSize = 256;
-    // Coefficient for curvature: n = 1 + C*ro
+    /** Coefficient for curvature-based subdivision: n = 1 + C*ro. */
     static double Csub = 15;
-    // Coefficient for contours: n = 1 + F*abs(df)/deltaf
+    /** Coefficient for result-based subdivision: n = 1 + F*|df|/Δf. */
     static double Fsub = 20;
 
-    public static void readData(FeScanner RD) {
+    /** Background colour of the 3D sub-scene. */
+    static Color bgColor     = Color.WHITE;
+    /** Solid face colour (used when contours are disabled). */
+    static Color modelColor  = Color.color(0.5, 0.5, 0.9);
+    /** Base colour modulated with the contour texture. */
+    static Color surTexColor = Color.color(0.8, 0.8, 0.8);
+    /** Colour of mesh edges. */
+    static Color edgeColor   = Color.color(0.2, 0.2, 0.2);
+    /** Colour of surface nodes. */
+    static Color nodeColor   = Color.color(0.2, 0.2, 0.2);
 
-        readDataFile(RD);
+    /**
+     * Reads the visualizer input file, loads the mesh and (optionally)
+     * the result file.
+     *
+     * @param rd scanner positioned at the start of the vis input file
+     */
+    public static void readData(FeScanner rd) {
+
+        readDataFile(rd);
 
         FeScanner fes = new FeScanner(meshFile);
         fem = new FeModel(fes, null);
@@ -61,76 +80,76 @@ public class VisData {
         fem.readData();
 
         if (resultFile != null) {
-            displ = new double[fem.nNod*fem.nDf];
+            displ = new double[fem.nNod * fem.nDf];
             FeStress stress = new FeStress(fem);
             stress.readResults(resultFile, displ);
             if (deformScale > 0) showDeformShape = true;
             drawContours = VisData.parm != VisData.parms.none;
-
         }
     }
 
-    static void readDataFile(FeScanner RD) {
+    private static void readDataFile(FeScanner rd) {
 
         vars name = null;
 
-        while (RD.hasNext()) {
+        while (rd.hasNext()) {
 
-            String varName = RD.next();
+            String varName = rd.next();
             String varNameLower = varName.toLowerCase();
             if (varName.equals("#")) {
-                RD.nextLine();    continue;
+                rd.nextLine();
+                continue;
             }
             try {
                 name = vars.valueOf(varNameLower);
             } catch (Exception e) {
-                UTIL.errorMsg(
-                    "Variable name is not found: " + varName);
+                UTIL.errorMsg("Variable name is not found: " + varName);
             }
 
             switch (name) {
-
             case meshfile:
-                meshFile = RD.next();
+                meshFile = rd.next();
                 break;
             case resultfile:
-                resultFile = RD.next();
+                resultFile = rd.next();
                 break;
             case parm:
                 try {
-                  varName = RD.next();
-                  parm = parms.valueOf(varName.toLowerCase());
-                } catch (Exception e) { UTIL.errorMsg(
-                  "No such result parameter: " + varName); }
+                    varName = rd.next();
+                    parm = parms.valueOf(varName.toLowerCase());
+                } catch (Exception e) {
+                    UTIL.errorMsg("No such result parameter: " + varName);
+                }
                 break;
             case showedges:
-                showEdges = RD.next().equalsIgnoreCase("y");
+                showEdges = rd.next().equalsIgnoreCase("y");
                 break;
             case shownodes:
-                showNodes = RD.next().equalsIgnoreCase("y");
+                showNodes = rd.next().equalsIgnoreCase("y");
                 break;
             case ndivmin:
-                nDivMin = RD.readInt();
+                nDivMin = rd.readInt();
                 break;
             case ndivmax:
-                nDivMax = RD.readInt();
+                nDivMax = rd.readInt();
                 break;
             case fmin:
-                fMin = RD.readDouble();
+                fMin = rd.readDouble();
                 break;
             case fmax:
-                fMax = RD.readDouble();
+                fMax = rd.readDouble();
                 break;
             case ncontours:
-                nContours = RD.readInt();
+                nContours = rd.readInt();
                 break;
             case deformscale:
-                deformScale = RD.readDouble();
+                deformScale = rd.readDouble();
                 break;
             case end:
                 return;
+            default:
+                break;
             }
         }
     }
-
 }

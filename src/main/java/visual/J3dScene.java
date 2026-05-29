@@ -1,154 +1,118 @@
 package visual;
 
-import javax.media.j3d.*;
-import javax.vecmath.*;
-import java.awt.*;
-import java.applet.Applet;
-import com.sun.j3d.utils.universe.SimpleUniverse;
+import javafx.scene.*;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.*;
+import javafx.scene.shape.*;
+import javafx.scene.transform.*;
+import javafx.stage.Stage;
 
-// Scene graph for visualization.
+/**
+ * JavaFX 3D scene for finite element visualization.
+ *
+ * <p>Replaces the former Java 3D / Applet-based scene.  Responsibilities:</p>
+ * <ol>
+ *   <li>Trigger surface subdivision via {@link SurfaceSubGeometry}.</li>
+ *   <li>Build the JavaFX scene graph (world group, lights, camera, sub-scene).</li>
+ *   <li>Configure the {@link PhongMaterial} for solid or contour rendering.</li>
+ *   <li>Attach mouse interaction handlers.</li>
+ *   <li>Show the {@link Stage}.</li>
+ * </ol>
+ */
 public class J3dScene {
 
-    private SurfaceSubGeometry subGeometry;
+    /**
+     * Constructs the scene and shows it in the supplied stage.
+     *
+     * @param stage the primary JavaFX stage
+     */
+    public J3dScene(Stage stage) {
 
-    // Construct Java3D scene for visualization.
-    public J3dScene(Applet c) {
+        SurfaceSubGeometry sub = new SurfaceSubGeometry();
 
-        GraphicsConfiguration config =
-                SimpleUniverse.getPreferredConfiguration();
+        // Transforms applied to the world group for interactive manipulation
+        Scale     scaleT     = new Scale(sub.getScale(), sub.getScale(), sub.getScale());
+        Rotate    rotX       = new Rotate(20,  Rotate.X_AXIS);
+        Rotate    rotY       = new Rotate(-30, Rotate.Y_AXIS);
+        Translate translateT = new Translate();
 
-        Canvas3D canvas = new Canvas3D(config);
-        c.setLayout(new BorderLayout());
-        c.add("Center", canvas);
+        Group world = new Group();
+        // Apply transforms in order: translate → rotY → rotX → scale
+        world.getTransforms().addAll(translateT, rotY, rotX, scaleT);
 
-        // Element subfaces, subedges and nodes
-        subGeometry = new SurfaceSubGeometry();
-        
-        BranchGroup root = new BranchGroup();
-        Lights.setLights(root);
-        TransformGroup tg =
-                MouseInteraction.setMouseBehavior();
+        Lights.setLights(world);
 
-        // Add finite element model shape
-        tg = addModelShape(tg);
+        // Element faces
+        MeshView facesView = sub.getModelMesh();
+        configureMaterial(facesView, sub);
+        world.getChildren().add(facesView);
 
-        root.addChild(tg);
-        root.compile();
-
-        System.out.println(" Number of polygons = " +
-                subGeometry.nVertices/3);
-        if (VisData.showDeformShape) System.out.printf(
-                " Deformed shape: max displacement ="+
-                " %4.2f max size\n", VisData.deformScale);
-        if (VisData.drawContours) {
-            System.out.printf(" Contours: %d colors" +
-                    " (Magenta-Blue-Cyan-Green-Yellow-Red)\n",
-                    VisData.nContours);
-            System.out.printf(" %s: Fmin = %10.4e, " +
-                    "Fmax = %10.4e\n", VisData.parm,
-                    subGeometry.fmin, subGeometry.fmax);
+        // Mesh edges
+        if (VisData.showEdges) {
+            world.getChildren().add(sub.getModelEdges());
         }
 
-        SimpleUniverse u = new SimpleUniverse(canvas);
-        u.getViewingPlatform().setNominalViewingTransform();
-        u.addBranchGraph(root);
+        // Surface nodes
+        if (VisData.showNodes) {
+            world.getChildren().add(sub.getModelNodes());
+        }
+
+        // Camera positioned along -Z looking at origin
+        PerspectiveCamera camera = new PerspectiveCamera(true);
+        camera.setNearClip(0.001);
+        camera.setFarClip(100.0);
+        camera.setTranslateZ(-2.4);
+
+        SubScene subScene = new SubScene(world, 800, 600, true, SceneAntialiasing.BALANCED);
+        subScene.setFill(VisData.bgColor);
+        subScene.setCamera(camera);
+
+        MouseInteraction.attachHandlers(subScene, rotX, rotY, translateT, scaleT);
+
+        StackPane root = new StackPane(subScene);
+        Scene scene = new Scene(root, 800, 600);
+
+        // Keep the 3D sub-scene filling the window
+        subScene.widthProperty().bind(root.widthProperty());
+        subScene.heightProperty().bind(root.heightProperty());
+
+        stage.setTitle("FEA Visualization");
+        stage.setScene(scene);
+        stage.show();
+
+        printInfo(sub);
     }
 
-    // Add model shape to the Java 3D scene graph.
-    // tg - transform group of the scene graph.
-    // returns  transform group of the scene graph
-    TransformGroup addModelShape(TransformGroup tg) {
+    /** Applies a {@link PhongMaterial} to the mesh: plain colour or contour texture. */
+    private void configureMaterial(MeshView facesView, SurfaceSubGeometry sub) {
 
-        Transform3D t3d = new Transform3D();
-        t3d.setScale(subGeometry.getScale());
-        tg.setTransform(t3d);
-
-        // Element faces composed of triangular subfaces
-        tg.addChild(facesShape());
-
-        // Edges composed of line segments
-        if (VisData.showEdges) tg.addChild(edgesShape());
-
-        // Nodes located at the model surface
-        if (VisData.showNodes) tg.addChild(nodesShape());
-
-        return tg;
-    }
-
-    // Shape object for element faces
-    private Shape3D facesShape() {
-
-        TriangleArray faces = subGeometry.getModelTriangles();
-
-        Appearance facesApp = new Appearance();
-
-        // Polygon Attributes
-        PolygonAttributes pa = new PolygonAttributes();
-        pa.setCullFace(PolygonAttributes.CULL_BACK);
-        pa.setPolygonOffset(VisData.offset);
-        pa.setPolygonOffsetFactor(VisData.offsetFactor);
-        facesApp.setPolygonAttributes(pa);
-
-        // Material
-        Color3f darkColor = new Color3f(0.0f, 0.0f, 0.0f);
-        Color3f brightColor = new Color3f(0.9f, 0.9f, 0.9f);
-        Color3f surfaceColor = VisData.modelColor;
-        if (VisData.drawContours)
-            surfaceColor = VisData.surTexColor;
-        Material facesMat = new Material(surfaceColor,
-                darkColor, surfaceColor, brightColor, 16.0f);
-        facesMat.setLightingEnable(true);
-        facesApp.setMaterial(facesMat);
-
+        PhongMaterial mat = new PhongMaterial();
         if (VisData.drawContours) {
-            // Texture for creating contours
             ColorScale scale = new ColorScale();
-            Texture2D texture = scale.getTexture();
-            facesApp.setTexture(texture);
-            TextureAttributes ta = new TextureAttributes();
-            ta.setTextureMode(TextureAttributes.MODULATE);
-            facesApp.setTextureAttributes(ta);
+            mat.setDiffuseMap(scale.getImage());
+            mat.setDiffuseColor(VisData.surTexColor);
+        } else {
+            mat.setDiffuseColor(VisData.modelColor);
+            mat.setSpecularColor(Color.color(0.9, 0.9, 0.9));
+            mat.setSpecularPower(16.0);
         }
-
-        // Create Shape using Geometry and Appearance
-        return new Shape3D(faces, facesApp);
+        facesView.setMaterial(mat);
+        facesView.setDrawMode(DrawMode.FILL);
     }
 
-    // Shape object for element edges
-    private Shape3D edgesShape() {
+    /** Prints a short summary of the rendered scene to standard output. */
+    private void printInfo(SurfaceSubGeometry sub) {
 
-        LineArray edges = subGeometry.getModelLines();
-
-        Appearance edgesApp = new Appearance();
-
-        LineAttributes la = new LineAttributes();
-        la.setLineAntialiasingEnable(true);
-        edgesApp.setLineAttributes(la);
-
-        ColoringAttributes ca = new ColoringAttributes();
-        ca.setColor(VisData.edgeColor);
-        edgesApp.setColoringAttributes(ca);
-
-        return new Shape3D(edges, edgesApp);
+        System.out.println(" Number of polygons = " + sub.nVertices / 3);
+        if (VisData.showDeformShape) {
+            System.out.printf(" Deformed shape: max displacement = %4.2f max size%n",
+                    VisData.deformScale);
+        }
+        if (VisData.drawContours) {
+            System.out.printf(" Contours: %d colors (Magenta-Blue-Cyan-Green-Yellow-Red)%n",
+                    VisData.nContours);
+            System.out.printf(" %s: Fmin = %10.4e, Fmax = %10.4e%n",
+                    VisData.parm, sub.fmin, sub.fmax);
+        }
     }
-
-    // Shape object for nodes
-    private Shape3D nodesShape() {
-
-        PointArray nodes = subGeometry.getModelPoints();
-
-        Appearance nodesApp = new Appearance();
-
-        PointAttributes pa = new PointAttributes();
-        pa.setPointAntialiasingEnable(true);
-        pa.setPointSize(3.0f);
-        nodesApp.setPointAttributes(pa);
-
-        ColoringAttributes ca = new ColoringAttributes();
-        ca.setColor(VisData.nodeColor);
-        nodesApp.setColoringAttributes(ca);
-
-        return new Shape3D(nodes, nodesApp);
-    }
-    //pa.setPolygonMode(PolygonAttributes.POLYGON_LINE); //==
 }

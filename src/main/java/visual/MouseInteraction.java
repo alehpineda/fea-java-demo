@@ -1,41 +1,71 @@
 package visual;
 
-import javax.media.j3d.*;
-import javax.vecmath.Point3d;
-import com.sun.j3d.utils.behaviors.mouse.*;
+import javafx.scene.SubScene;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Translate;
 
+/**
+ * Attaches mouse-driven rotate / zoom / translate handlers to the 3D sub-scene.
+ *
+ * <ul>
+ *   <li>Left-button drag → orbit (rotate around X and Y axes)</li>
+ *   <li>Right-button drag → pan (translate in X / Y)</li>
+ *   <li>Scroll wheel → zoom (uniform scale)</li>
+ * </ul>
+ */
 public class MouseInteraction {
 
-    // Set mouth behavior (rotate, zoom, translate).
-    // returns  transform group.
-    public static TransformGroup setMouseBehavior() {
+    private static final double ROTATE_SPEED   = 0.3;
+    private static final double TRANSLATE_SPEED = 0.002;
+    private static final double ZOOM_FACTOR     = 1.1;
 
-        BoundingSphere bounds =  new BoundingSphere(
-            new Point3d(0.,0.,0.), 16*SurfaceGeometry.sizeMax);
+    /**
+     * Registers all mouse handlers on {@code subScene}.
+     * The supplied transforms are applied directly to the world group.
+     *
+     * @param subScene   the 3D sub-scene receiving mouse events
+     * @param rotX       rotation around the X axis
+     * @param rotY       rotation around the Y axis
+     * @param translateT pan translation
+     * @param scaleT     zoom scale
+     */
+    public static void attachHandlers(SubScene subScene,
+                                      Rotate rotX, Rotate rotY,
+                                      Translate translateT, Scale scaleT) {
 
-        TransformGroup tg = new TransformGroup();
-        tg.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        tg.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        double[] lastX = {0};
+        double[] lastY = {0};
 
-        // Create the rotate behavior node
-        MouseRotate behavior1 = new MouseRotate();
-        behavior1.setSchedulingBounds(bounds);
-        behavior1.setTransformGroup(tg);
-        tg.addChild(behavior1);
+        subScene.setOnMousePressed(e -> {
+            lastX[0] = e.getSceneX();
+            lastY[0] = e.getSceneY();
+        });
 
-        // Create the zoom behavior node
-        MouseZoom behavior2 = new MouseZoom();
-        behavior2.setSchedulingBounds(bounds);
-        behavior2.setTransformGroup(tg);
-        tg.addChild(behavior2);
+        subScene.setOnMouseDragged(e -> {
+            double dx = e.getSceneX() - lastX[0];
+            double dy = e.getSceneY() - lastY[0];
 
-        // Create the translate behavior node
-        MouseTranslate behavior3 = new MouseTranslate();
-        behavior3.setSchedulingBounds(bounds);
-        behavior3.setTransformGroup(tg);
-        tg.addChild(behavior3);
+            if (e.isPrimaryButtonDown()) {
+                // Orbit: drag up/down tilts, drag left/right spins
+                rotX.setAngle(rotX.getAngle() - dy * ROTATE_SPEED);
+                rotY.setAngle(rotY.getAngle() + dx * ROTATE_SPEED);
+            } else if (e.isSecondaryButtonDown()) {
+                // Pan
+                translateT.setX(translateT.getX() + dx * TRANSLATE_SPEED);
+                translateT.setY(translateT.getY() + dy * TRANSLATE_SPEED);
+            }
 
-        return tg;
+            lastX[0] = e.getSceneX();
+            lastY[0] = e.getSceneY();
+        });
+
+        subScene.setOnScroll(e -> {
+            double factor = e.getDeltaY() > 0 ? ZOOM_FACTOR : 1.0 / ZOOM_FACTOR;
+            scaleT.setX(scaleT.getX() * factor);
+            scaleT.setY(scaleT.getY() * factor);
+            scaleT.setZ(scaleT.getZ() * factor);
+        });
     }
-
 }
+

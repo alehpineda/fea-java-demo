@@ -4,39 +4,46 @@ import model.*;
 
 import java.util.*;
 
-// Geometry: surface faces, edges and nodes
+/**
+ * Computes surface geometry (faces, edges, nodes) of the FE model.
+ *
+ * <p>Walks the element connectivity to identify mesh faces that lie on
+ * the outer surface, derives edges from those faces, and marks the
+ * corresponding nodes.  Applies optional deformation scaling and
+ * centres the model at the origin for camera alignment.</p>
+ */
 class SurfaceGeometry {
 
     FeModel fem;
 
-    // Numbers of surface element faces, edges and nodes
+    /** Number of surface faces, edges and nodes. */
     int nFaces, nEdges, nsNodes;
-    // Surface element faces and edges, surface nodes
-    LinkedList listFaces;
-    LinkedList listEdges;
-    int sNodes[];
+    /** Connectivity lists for surface faces and edges. */
+    LinkedList<int[]> listFaces;
+    LinkedList<int[]> listEdges;
+    /** sNodes[i] > 0 if node i is on the surface. */
+    int[] sNodes;
 
-    double fun[], fmin, fmax, deltaf;
-    private static double xyzmin[] = new double[3];
-    private static double xyzmax[] = new double[3];
+    double[] fun;
+    double fmin, fmax, deltaf;
+    private static double[] xyzmin = new double[3];
+    private static double[] xyzmax = new double[3];
+    /** Largest dimension of the bounding box (used for scaling). */
     static double sizeMax;
 
     SurfaceGeometry() {
 
         fem = VisData.fem;
-        listFaces = new LinkedList();
-        listEdges = new LinkedList();
+        listFaces = new LinkedList<>();
+        listEdges = new LinkedList<>();
         sNodes = new int[fem.nNod];
 
-        // Create element faces located at the surface
         createFaces();
         nFaces = listFaces.size();
 
-        // Create element edges located at the surface
         createEdges();
         nEdges = listEdges.size();
 
-        // Create nodes located at the surface
         createNodes();
 
         if (VisData.drawContours) {
@@ -48,58 +55,56 @@ class SurfaceGeometry {
         modifyNodeCoordinates();
     }
 
-    // Create linked list listFaces containing element faces
-    // located on the model surface. 2D case: element = face
+    /**
+     * Populates {@link #listFaces} with element faces on the outer surface.
+     * For 2-D models every element face is a surface face.
+     */
     void createFaces() {
 
-        if (fem.nDim == 3) {  // 3D mesh
+        if (fem.nDim == 3) {
             for (int iel = 0; iel < fem.nEl; iel++) {
-                int elemFaces[][]
-                        = fem.elems[iel].getElemFaces();
+                int[][] elemFaces = fem.elems[iel].getElemFaces();
                 for (int[] elemFace : elemFaces) {
                     int nNodes = elemFace.length;
                     int[] faceNodes = new int[nNodes];
                     for (int i = 0; i < nNodes; i++) {
-                        faceNodes[i]
-                            = fem.elems[iel].ind[elemFace[i]];
+                        faceNodes[i] = fem.elems[iel].ind[elemFace[i]];
                     }
-                    // Zero area degenerated 8-node face
+                    // Skip degenerated 8-node face
                     if (nNodes == 8 &&
                             (faceNodes[3] == faceNodes[7] ||
-                             faceNodes[1] == faceNodes[5]))
+                             faceNodes[1] == faceNodes[5])) {
                         continue;
-                    ListIterator f = listFaces.listIterator(0);
+                    }
+                    ListIterator<int[]> f = listFaces.listIterator(0);
                     boolean faceFound = false;
                     while (f.hasNext()) {
-                        int[] faceNodesA = (int[]) f.next();
-                        if (equalFaces(faceNodes,faceNodesA)) {
+                        int[] faceNodesA = f.next();
+                        if (equalFaces(faceNodes, faceNodesA)) {
                             f.remove();
                             faceFound = true;
                             break;
                         }
                     }
-                    if (!faceFound) f.add(faceNodes);
+                    if (!faceFound) {
+                        listFaces.addLast(faceNodes);
+                    }
                 }
             }
-        }
-        else {  // 2D - faces = elements
-            ListIterator f = listFaces.listIterator(0);
+        } else {
             for (int iel = 0; iel < fem.nEl; iel++) {
-                f.add(fem.elems[iel].ind);
+                listFaces.addLast(fem.elems[iel].ind);
             }
         }
     }
 
-    // Compare two element faces.
-    // Surface has 8 or 4 nodes, corners are compared.
-    // f1 - first face connectivities.
-    // f2 - second face connectivities.
-    // returns  true if faces are same.
+    /**
+     * Returns {@code true} when the two face connectivity arrays share
+     * the same corner nodes (ignoring mid-side nodes and ordering).
+     */
     boolean equalFaces(int[] f1, int[] f2) {
 
-        // Quadratic elements or linear elements
         int step = (f1.length > 4) ? 2 : 1;
-
         for (int j = 0; j < f1.length; j += step) {
             int n1 = f1[j];
             boolean nodeFound = false;
@@ -114,108 +119,112 @@ class SurfaceGeometry {
         return true;
     }
 
-    // Create linked list listEdges containing element edges
-    // located on the model surface
+    /**
+     * Populates {@link #listEdges} with unique surface edges derived
+     * from {@link #listFaces}.
+     */
     void createEdges() {
 
         for (int iFace = 0; iFace < nFaces; iFace++) {
 
-            int faceNodes[] = (int[]) listFaces.get(iFace);
+            int[] faceNodes = listFaces.get(iFace);
             int nFaceNodes = faceNodes.length;
             int step = (nFaceNodes > 4) ? 2 : 1;
 
-            for (int inod=0; inod < nFaceNodes; inod += step) {
+            for (int inod = 0; inod < nFaceNodes; inod += step) {
                 int[] edgeNodes = new int[step + 1];
-                for (int i = inod, k = 0; i <= inod+step;
-                     i++, k++)
-                    edgeNodes[k] = faceNodes[i%nFaceNodes];
-
-                ListIterator ea = listEdges.listIterator(0);
+                for (int i = inod, k = 0; i <= inod + step; i++, k++) {
+                    edgeNodes[k] = faceNodes[i % nFaceNodes];
+                }
+                ListIterator<int[]> ea = listEdges.listIterator(0);
                 boolean edgeFound = false;
                 while (ea.hasNext()) {
-                    int[] edgeNodesA = (int[]) ea.next();
+                    int[] edgeNodesA = ea.next();
                     if (equalEdges(edgeNodes, edgeNodesA)) {
                         edgeFound = true;
                         break;
                     }
                 }
-                if (!edgeFound) ea.add(edgeNodes);
+                if (!edgeFound) {
+                    listEdges.addLast(edgeNodes);
+                }
             }
         }
     }
 
-    // Compare two element edges.
-    // e1 - first edge connectivities.
-    // e2 - second edge connectivities.
-    // returns  true if edges have same node numbers at ends
+    /**
+     * Returns {@code true} when two edge arrays share the same end
+     * nodes (direction-independent comparison).
+     */
     boolean equalEdges(int[] e1, int[] e2) {
 
         int len = e1.length - 1;
         return (e1[0] == e2[0] && e1[len] == e2[len]) ||
-                (e1[0] == e2[len] && e1[len] == e2[0]);
+               (e1[0] == e2[len] && e1[len] == e2[0]);
     }
 
-    // Fill out array of surface nodes sNodes (0/1).
+    /**
+     * Marks surface nodes: {@code sNodes[i] = 1} for every node that
+     * appears in at least one surface edge.
+     */
     void createNodes() {
 
-        for (int i = 0; i < sNodes.length; i++) sNodes[i] = 0;
-
-        ListIterator e = listEdges.listIterator();
-
+        Arrays.fill(sNodes, 0);
+        ListIterator<int[]> e = listEdges.listIterator();
         for (int iEdge = 0; iEdge < nEdges; iEdge++) {
-            int edgeNodes[] = (int[]) e.next();
-            int nEdgeNodes = edgeNodes.length;
-            for (int i = 0; i < nEdgeNodes; i++)
-                sNodes[edgeNodes[i] - 1] = 1;
+            int[] edgeNodes = e.next();
+            for (int node : edgeNodes) {
+                sNodes[node - 1] = 1;
+            }
         }
         nsNodes = 0;
-        for (int sNode : sNodes)
-            if (sNode > 0) nsNodes++;
+        for (int s : sNodes) {
+            if (s > 0) nsNodes++;
+        }
     }
 
-    // Add scaled displacements to nodal coordinates and
-    //  center finite element mesh
+    /**
+     * Optionally adds scaled displacements to node coordinates (deformed
+     * shape), then centres the model so the bounding-box midpoint is at
+     * the origin.
+     */
     void modifyNodeCoordinates() {
 
-        // Deformed shape: add scaled displacements
-        // to nodal coordinates
         if (VisData.showDeformShape) {
             setBoundingBox();
             double displMax = 0;
             for (int i = 0; i < fem.nNod; i++) {
                 double d = 0;
                 for (int j = 0; j < fem.nDim; j++) {
-                    double s =  VisData.displ[i*fem.nDim+j];
-                    d += s*s;
+                    double s = VisData.displ[i * fem.nDim + j];
+                    d += s * s;
                 }
                 displMax = Math.max(d, displMax);
             }
             displMax = Math.sqrt(displMax);
-            // Scale for visualization of deformed shape
-            double scaleD =
-                    sizeMax*VisData.deformScale/displMax;
+            double scaleD = sizeMax * VisData.deformScale / displMax;
             for (int i = 0; i < fem.nNod; i++) {
-                for (int j = 0; j < fem.nDim; j++)
+                for (int j = 0; j < fem.nDim; j++) {
                     fem.setNodeCoord(i, j,
                         fem.getNodeCoord(i, j) +
-                        scaleD*VisData.displ[i*fem.nDim+j]);
+                        scaleD * VisData.displ[i * fem.nDim + j]);
+                }
             }
         }
 
         setBoundingBox();
-        // Translate JFEM model to have the bounding
-        //  box center at (0,0,0).
-        double xyzC[] = new double[3];
-        for (int j = 0; j < 3; j++)
-            xyzC[j] = 0.5*(xyzmin[j] + xyzmax[j]);
-        for (int i = 0; i < fem.nNod; i++)
-            for (int j = 0; j < fem.nDim; j++)
-                fem.setNodeCoord(i, j,
-                    fem.getNodeCoord(i, j) - xyzC[j]);
+        double[] xyzC = new double[3];
+        for (int j = 0; j < 3; j++) {
+            xyzC[j] = 0.5 * (xyzmin[j] + xyzmax[j]);
+        }
+        for (int i = 0; i < fem.nNod; i++) {
+            for (int j = 0; j < fem.nDim; j++) {
+                fem.setNodeCoord(i, j, fem.getNodeCoord(i, j) - xyzC[j]);
+            }
+        }
     }
 
-    // Set min-max values of xyz coordinates of JFEM model
-    // xyzmin[] and xyzmax[].
+    /** Updates the static bounding-box arrays from current node coordinates. */
     void setBoundingBox() {
 
         for (int j = 0; j < fem.nDim; j++) {
@@ -242,12 +251,12 @@ class SurfaceGeometry {
         }
     }
 
-    // Compute scale for the finite element model.
-    // returns  scale value.
+    /**
+     * Returns the uniform scale factor that fits the model into a unit cube.
+     *
+     * @return scale in (0, 1]
+     */
     double getScale() {
-
-        if (sizeMax > 0) return 0.8/sizeMax;
-        else return 1.0;
+        return sizeMax > 0 ? 0.8 / sizeMax : 1.0;
     }
-
 }

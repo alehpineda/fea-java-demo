@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MouseInteraction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">visual</a> &gt; <span class="el_source">MouseInteraction.java</span></div><h1>MouseInteraction.java</h1><pre class="source lang-java linenums">package visual;
+
+import javafx.scene.SubScene;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Translate;
+
+/**
+ * Attaches mouse-driven rotate / zoom / translate handlers to the 3D sub-scene.
+ *
+ * &lt;ul&gt;
+ *   &lt;li&gt;Left-button drag → orbit (rotate around X and Y axes)&lt;/li&gt;
+ *   &lt;li&gt;Right-button drag → pan (translate in X / Y)&lt;/li&gt;
+ *   &lt;li&gt;Scroll wheel → zoom (uniform scale)&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+<span class="nc" id="L17">public class MouseInteraction {</span>
+
+    private static final double ROTATE_SPEED   = 0.3;
+    private static final double TRANSLATE_SPEED = 0.002;
+    private static final double ZOOM_FACTOR     = 1.1;
+
+    /**
+     * Registers all mouse handlers on {@code subScene}.
+     * The supplied transforms are applied directly to the world group.
+     *
+     * @param subScene   the 3D sub-scene receiving mouse events
+     * @param rotX       rotation around the X axis
+     * @param rotY       rotation around the Y axis
+     * @param translateT pan translation
+     * @param scaleT     zoom scale
+     */
+    public static void attachHandlers(SubScene subScene,
+                                      Rotate rotX, Rotate rotY,
+                                      Translate translateT, Scale scaleT) {
+
+<span class="nc" id="L37">        double[] lastX = {0};</span>
+<span class="nc" id="L38">        double[] lastY = {0};</span>
+
+<span class="nc" id="L40">        subScene.setOnMousePressed(e -&gt; {</span>
+<span class="nc" id="L41">            lastX[0] = e.getSceneX();</span>
+<span class="nc" id="L42">            lastY[0] = e.getSceneY();</span>
+<span class="nc" id="L43">        });</span>
+
+<span class="nc" id="L45">        subScene.setOnMouseDragged(e -&gt; {</span>
+<span class="nc" id="L46">            double dx = e.getSceneX() - lastX[0];</span>
+<span class="nc" id="L47">            double dy = e.getSceneY() - lastY[0];</span>
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (e.isPrimaryButtonDown()) {</span>
+                // Orbit: drag up/down tilts, drag left/right spins
+<span class="nc" id="L51">                rotX.setAngle(rotX.getAngle() - dy * ROTATE_SPEED);</span>
+<span class="nc" id="L52">                rotY.setAngle(rotY.getAngle() + dx * ROTATE_SPEED);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            } else if (e.isSecondaryButtonDown()) {</span>
+                // Pan
+<span class="nc" id="L55">                translateT.setX(translateT.getX() + dx * TRANSLATE_SPEED);</span>
+<span class="nc" id="L56">                translateT.setY(translateT.getY() + dy * TRANSLATE_SPEED);</span>
+            }
+
+<span class="nc" id="L59">            lastX[0] = e.getSceneX();</span>
+<span class="nc" id="L60">            lastY[0] = e.getSceneY();</span>
+<span class="nc" id="L61">        });</span>
+
+<span class="nc" id="L63">        subScene.setOnScroll(e -&gt; {</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            double factor = e.getDeltaY() &gt; 0 ? ZOOM_FACTOR : 1.0 / ZOOM_FACTOR;</span>
+<span class="nc" id="L65">            scaleT.setX(scaleT.getX() * factor);</span>
+<span class="nc" id="L66">            scaleT.setY(scaleT.getY() * factor);</span>
+<span class="nc" id="L67">            scaleT.setZ(scaleT.getZ() * factor);</span>
+<span class="nc" id="L68">        });</span>
+<span class="nc" id="L69">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

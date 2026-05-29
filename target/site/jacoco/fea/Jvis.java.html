@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Jvis.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fea-java-demo</a> &gt; <a href="index.source.html" class="el_package">fea</a> &gt; <span class="el_source">Jvis.java</span></div><h1>Jvis.java</h1><pre class="source lang-java linenums">package fea;
+
+import visual.*;
+import util.*;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+
+/**
+ * Main class of the FEA visualizer.
+ *
+ * &lt;p&gt;Reads a visualizer input file (specifying mesh, optional results file and
+ * display options), then opens an interactive JavaFX 3D window rendered by
+ * {@link visual.J3dScene}.  Mouse controls: left-drag to orbit, right-drag to
+ * pan, scroll-wheel to zoom.&lt;/p&gt;
+ *
+ * &lt;p&gt;Usage:
+ * &lt;pre&gt;  java fea.Jvis &amp;lt;input-file&amp;gt;&lt;/pre&gt;
+ * or via Maven:
+ * &lt;pre&gt;  mvn javafx:run -Djavafx.args=example03/cube.vis&lt;/pre&gt;
+ * &lt;/p&gt;
+ */
+<span class="nc" id="L23">public class Jvis extends Application {</span>
+
+    /** Input-file path forwarded from {@link #main(String[])}. */
+    private static String inputFile;
+
+    /**
+     * Entry point.  Stores the input-file path and launches the
+     * JavaFX application lifecycle.
+     *
+     * @param args command-line arguments; args[0] is the vis input file
+     */
+    public static void main(String[] args) {
+
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (args.length == 0) {</span>
+<span class="nc" id="L37">            System.out.println(&quot;Usage: java fea.Jvis &lt;input-file&gt;&quot;);</span>
+<span class="nc" id="L38">            return;</span>
+        }
+<span class="nc" id="L40">        FE.main = FE.JVIS;</span>
+<span class="nc" id="L41">        inputFile = args[0];</span>
+<span class="nc" id="L42">        System.out.println(&quot;fea.Jvis: Visualization. Data file: &quot; + inputFile);</span>
+<span class="nc" id="L43">        Application.launch(args);</span>
+<span class="nc" id="L44">    }</span>
+
+    /**
+     * JavaFX start callback — loads the model data and creates the 3D scene.
+     *
+     * @param stage the primary stage provided by the JavaFX runtime
+     */
+    @Override
+    public void start(Stage stage) {
+
+<span class="nc" id="L54">        FeScanner rd = new FeScanner(inputFile);</span>
+<span class="nc" id="L55">        VisData.readData(rd);</span>
+<span class="nc" id="L56">        new J3dScene(stage);</span>
+<span class="nc" id="L57">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

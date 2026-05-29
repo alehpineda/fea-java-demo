@@ -9,16 +9,30 @@
     <name>fea-java-demo</name>
 
     <properties>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <assertj.version>3.25.3</assertj.version>
         <mockito.version>5.11.0</mockito.version>
-        <jacoco.version>0.8.11</jacoco.version>
+        <jacoco.version>0.8.14</jacoco.version>
         <surefire.version>3.2.5</surefire.version>
+        <javafx.version>21.0.3</javafx.version>
     </properties>
 
     <dependencies>
+        <!-- JavaFX for interactive 3D visualization -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -44,13 +58,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.13.0</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
-                    <excludes>
-                        <exclude>visual/**</exclude>
-                        <exclude>fea/Jvis.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -59,6 +69,16 @@
                 <version>${surefire.version}</version>
                 <configuration>
                     <useModulePath>false</useModulePath>
+                    <!-- Tests do not launch the JavaFX GUI; no display needed -->
+                </configuration>
+            </plugin>
+            <!-- Launch Jvis interactively: mvn javafx:run -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>fea.Jvis</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -104,8 +124,10 @@
                                 </rule>
                             </rules>
                             <excludes>
-                                <exclude>visual/*</exclude>
+                                <!-- visualization requires a display; excluded from coverage -->
+                                <exclude>visual/**</exclude>
                                 <exclude>fea/Jvis*</exclude>
+                                <!-- elastic-plastic path not exercised by shipped examples -->
                                 <exclude>material/ElasticPlasticMaterial*</exclude>
                             </excludes>
                         </configuration>
