@@ -1,0 +1,249 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.agents
+.agents/skills
+.agents/skills/acquire-codebase-knowledge
+.agents/skills/acquire-codebase-knowledge/SKILL.md
+.agents/skills/acquire-codebase-knowledge/assets
+.agents/skills/acquire-codebase-knowledge/references
+.agents/skills/acquire-codebase-knowledge/scripts
+.agents/skills/java-docs
+.agents/skills/java-docs/SKILL.md
+.agents/skills/java-junit
+.agents/skills/java-junit/SKILL.md
+.agents/skills/java-refactoring-extract-method
+.agents/skills/java-refactoring-extract-method/SKILL.md
+.agents/skills/java-refactoring-remove-parameter
+.agents/skills/java-refactoring-remove-parameter/SKILL.md
+.claude
+.claude/skills
+.claude/skills/acquire-codebase-knowledge
+.claude/skills/acquire-codebase-knowledge/SKILL.md
+.claude/skills/acquire-codebase-knowledge/assets
+.claude/skills/acquire-codebase-knowledge/references
+.claude/skills/acquire-codebase-knowledge/scripts
+.claude/skills/java-docs
+.claude/skills/java-docs/SKILL.md
+.claude/skills/java-junit
+.claude/skills/java-junit/SKILL.md
+.claude/skills/java-refactoring-extract-method
+.claude/skills/java-refactoring-extract-method/SKILL.md
+.claude/skills/java-refactoring-remove-parameter
+.claude/skills/java-refactoring-remove-parameter/SKILL.md
+.github
+.github/agents
+.github/agents/modernize-java.agent.md
+.github/instructions
+.github/instructions/convert-cassandra-to-spring-data-cosmos.instructions.md
+.github/instructions/java-11-to-java-17-upgrade.instructions.md
+.github/instructions/java-17-to-java-21-upgrade.instructions.md
+.github/instructions/java-21-to-java-25-upgrade.instructions.md
+.github/instructions/object-calisthenics.instructions.md
+.github/instructions/oop-design-patterns.instructions.md
+.github/instructions/update-docs-on-code-change.instructions.md
+.gitignore
+LICENSE
+README.md
+README.txt
+context
+context/fea.pdf
+docs
+docs/codebase
+docs/codebase/.codebase-scan.txt
+example01
+example01/ReadMe.pdf
+example01/f.fem
+example01/f.lst
+example01/f.lst.1
+example01/x.bat
+example02
+example02/ReadMe.pdf
+example02/f.fem
+example02/f.lst
+example02/f.lst.A
+example02/f.lst.B
+example02/f.mesh
+example02/x.bat
+example03
+example03/ReadMe.pdf
+example03/f.mesh
+example03/f.res
+example03/f.vis
+example03/v.bat
+example04
+example04/ReadMe.pdf
+example04/g.bat
+example04/hole3d-mesh.vis
+example04/hole3d.fem
+example04/hole3d.gen
+example04/hole3d.gen.lst
+example04/hole3d.lst
+example04/hole3d.lst.1
+example04/hole3d.mesh
+example04/hole3d.vis
+example04/v.bat
+example04/vm.bat
+example04/x.bat
+jc.bat
+readme.pdf
+src
+src/elem
+src/elem/Element.java
+src/elem/ElementQuad2D.java
+src/elem/ElementQuad3D.java
+src/elem/ShapeQuad2D.java
+src/elem/ShapeQuad3D.java
+src/elem/StressContainer.java
+src/fea
+src/fea/FE.java
+src/fea/Jfem.java
+src/fea/Jmgen.java
+src/fea/Jvis.java
+src/gener
+src/gener/connect.java
+src/gener/copy.java
+src/gener/genquad8.java
+src/gener/readmesh.java
+src/gener/rectangle.java
+src/gener/sweep.java
+src/gener/transform.java
+src/gener/writemesh.java
+src/material
+src/material/ElasticMaterial.java
+src/material/ElasticPlasticMaterial.java
+src/material/Material.java
+src/model
+src/model/Dof.java
+src/model/ElemFaceLoad.java
+src/model/FeLoad.java
+src/model/FeLoadData.java
+src/model/FeModel.java
+src/model/FeModelData.java
+src/model/FeStress.java
+src/solver
+src/solver/Solver.java
+src/solver/SolverLDU.java
+src/solver/SolverPCG.java
+src/util
+src/util/FePrintWriter.java
+src/util/FeScanner.java
+src/util/GaussRule.java
+src/util/UTIL.java
+src/visual
+src/visual/ColorScale.java
+src/visual/FaceSubdivision.java
+src/visual/J3dScene.java
+src/visual/Lights.java
+src/visual/MouseInteraction.java
+src/visual/ResultAtNodes.java
+src/visual/SurfaceGeometry.java
+src/visual/SurfaceSubGeometry.java
+src/visual/VisData.java
+
+=== STACK DETECTION (manifest files) ===
+No recognized manifest files found in project root.
+
+=== ENTRY POINTS ===
+No common entry points found. Check 'main' or 'scripts.start' in manifest files above.
+
+=== LINTING AND FORMATTING CONFIG ===
+No linting or formatting config files found in project root.
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+No .env.example or .env.template found. Identify required environment variables by searching the code and config for environment variable reads.
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:28: TODO_LIMIT = 60
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:291: """Search for TODO/FIXME/HACK comments."""
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:291: """Search for TODO/FIXME/HACK comments."""
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:291: """Search for TODO/FIXME/HACK comments."""
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:293: patterns = ["TODO", "FIXME", "HACK"]
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:293: patterns = ["TODO", "FIXME", "HACK"]
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:293: patterns = ["TODO", "FIXME", "HACK"]
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:320: return todos[:TODO_LIMIT]
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:617: # TODOs
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:620: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", todos, output_file)
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:620: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", todos, output_file)
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:620: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", todos, output_file)
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:622: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", ["None found."], output_file)
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:622: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", ["None found."], output_file)
+.agents/skills/acquire-codebase-knowledge/scripts/scan.py:622: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", ["None found."], output_file)
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:28: TODO_LIMIT = 60
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:291: """Search for TODO/FIXME/HACK comments."""
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:291: """Search for TODO/FIXME/HACK comments."""
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:291: """Search for TODO/FIXME/HACK comments."""
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:293: patterns = ["TODO", "FIXME", "HACK"]
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:293: patterns = ["TODO", "FIXME", "HACK"]
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:293: patterns = ["TODO", "FIXME", "HACK"]
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:320: return todos[:TODO_LIMIT]
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:617: # TODOs
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:620: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", todos, output_file)
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:620: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", todos, output_file)
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:620: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", todos, output_file)
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:622: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", ["None found."], output_file)
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:622: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", ["None found."], output_file)
+.claude/skills/acquire-codebase-knowledge/scripts/scan.py:622: print_section("TODO / FIXME / HACK (production code only, test dirs excluded)", ["None found."], output_file)
+
+=== GIT RECENT COMMITS (last 20) ===
+37e1df2 Added skills, agents, instructions.
+0aa85ed FEA init
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+   1 .agents/skills/acquire-codebase-knowledge/SKILL.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/ARCHITECTURE.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/CONCERNS.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/CONVENTIONS.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/INTEGRATIONS.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/STACK.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/STRUCTURE.md
+   1 .agents/skills/acquire-codebase-knowledge/assets/templates/TESTING.md
+   1 .agents/skills/acquire-codebase-knowledge/references/inquiry-checkpoints.md
+   1 .agents/skills/acquire-codebase-knowledge/references/stack-detection.md
+   1 .agents/skills/acquire-codebase-knowledge/scripts/scan.py
+   1 .agents/skills/java-docs/SKILL.md
+   1 .agents/skills/java-junit/SKILL.md
+   1 .agents/skills/java-refactoring-extract-method/SKILL.md
+   1 .agents/skills/java-refactoring-remove-parameter/SKILL.md
+   1 .claude/skills/acquire-codebase-knowledge/SKILL.md
+   1 .claude/skills/acquire-codebase-knowledge/assets/templates/ARCHITECTURE.md
+   1 .claude/skills/acquire-codebase-knowledge/assets/templates/CONCERNS.md
+   1 .claude/skills/acquire-codebase-knowledge/assets/templates/CONVENTIONS.md
+   1 .claude/skills/acquire-codebase-knowledge/assets/templates/INTEGRATIONS.md
+
+=== MONOREPO SIGNALS ===
+No monorepo signals detected.
+
+=== CODE METRICS ===
+Total files scanned: 118
+Total lines of code: 7514
+
+Files by language:
+  Other: 72
+  Java: 44
+  Python: 2
+
+Top 10 largest files:
+context/fea.pdf: 3370.7KB
+example04/hole3d.lst.1: 183.2KB
+example03/ReadMe.pdf: 146.7KB
+example04/ReadMe.pdf: 104.7KB
+example04/hole3d.mesh: 73.4KB
+example02/ReadMe.pdf: 44.5KB
+.github/instructions/convert-cassandra-to-spring-data-cosmos.instructions.md: 40.5KB
+example01/ReadMe.pdf: 29.4KB
+readme.pdf: 28.1KB
+.github/agents/modernize-java.agent.md: 23.5KB
+
+=== CI/CD PIPELINES ===
+No CI/CD pipelines detected.
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===
