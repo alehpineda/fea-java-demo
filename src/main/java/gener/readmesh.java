@@ -15,7 +15,7 @@ public class readmesh {
         String fileName = Jmgen.RD.next();
         Jmgen.PR.printf("ReadMesh:  %s    %s\n",
                 modelName, fileName);
-        FeScanner RD = new FeScanner(fileName);
+        FeScanner RD = new FeScanner(Jmgen.RD.resolveSibling(fileName));
         FeModel m = new FeModel(RD, Jmgen.PR);
         m.readData();
         Jmgen.blocks.put(modelName, m);

@@ -89,7 +89,11 @@
                         <configuration>
                             <rules>
                                 <rule>
-                                    <element>BUNDLE</element>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>util</include>
+                                        <include>material</include>
+                                    </includes>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
@@ -102,6 +106,7 @@
                             <excludes>
                                 <exclude>visual/*</exclude>
                                 <exclude>fea/Jvis*</exclude>
+                                <exclude>material/ElasticPlasticMaterial*</exclude>
                             </excludes>
                         </configuration>
                     </execution>

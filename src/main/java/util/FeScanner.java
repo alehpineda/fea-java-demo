@@ -22,7 +22,7 @@ public class FeScanner {
         } catch (Exception e) {
             throw new FeaException("Input file not found: " + fileIn);
         }
-        es.useDelimiter("\s*=\s*|\s+");
+        es.useDelimiter("\\s*=\\s*|\\s+");
 
     }
 

@@ -21,7 +21,8 @@ public class writemesh {
                 modelName, fileName);
 
         PrintWriter WR =
-                new FePrintWriter().getPrinter(fileName);
+                new FePrintWriter().getPrinter(
+                        Jmgen.RD.resolveSibling(fileName));
 
         if (Jmgen.blocks.containsKey(modelName))
             m = Jmgen.blocks.get(modelName);
