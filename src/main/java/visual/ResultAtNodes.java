@@ -94,13 +94,13 @@ public class ResultAtNodes {
                 case sy:
                     f = stressNod[node][1];            break;
                 case sz:
-                    f = stressNod[node][2];            break;
+                    f = fem.nDim == 3 ? stressNod[node][2] : stressNod[node][3]; break;
                 case sxy:
-                    f = stressNod[node][3];            break;
+                    f = fem.nDim == 3 ? stressNod[node][3] : stressNod[node][2]; break;
                 case syz:
-                    f = stressNod[node][4];            break;
+                    f = fem.nDim == 3 ? stressNod[node][4] : 0.0; break;
                 case szx:
-                    f = stressNod[node][5];            break;
+                    f = fem.nDim == 3 ? stressNod[node][5] : 0.0; break;
                 case s1:
                     f = sm + 2*THIRD*si*Math.cos(psi); break;
                 case s2:
