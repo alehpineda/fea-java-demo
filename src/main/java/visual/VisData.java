@@ -75,9 +75,13 @@ public class VisData {
         readDataFile(rd);
 
         FeScanner fes = new FeScanner(meshFile);
-        fem = new FeModel(fes, null);
-        Element.fem = fem;
-        fem.readData();
+        try {
+            fem = new FeModel(fes, null);
+            Element.fem = fem;
+            fem.readData();
+        } finally {
+            fes.close();
+        }
 
         if (resultFile != null) {
             displ = new double[fem.nNod * fem.nDf];
