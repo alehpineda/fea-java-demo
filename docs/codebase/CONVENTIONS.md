@@ -29,7 +29,7 @@
 
 ### 4) Error and Logging Conventions
 
-- Error strategy: `UTIL.errorMsg(String)` prints `"=== ERROR: " + message` to `System.out` then calls `System.exit(1)` — no exceptions are thrown for domain errors
+- Error strategy: `UTIL.errorMsg(String)` throws `util.FeaException`; CLI entry points catch it, print `"=== ERROR: " + message`, and exit with a non-zero status
 - Progress logging: `System.out.println` for runtime status messages to console; `PrintWriter` (`PR`) for detailed output to `.lst` files
 - No logging framework (no SLF4J, Log4j, java.util.logging)
 - No sensitive-data redaction (not applicable to this domain)
