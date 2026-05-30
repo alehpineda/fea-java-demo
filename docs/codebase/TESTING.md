@@ -13,9 +13,9 @@
 
 ### 2) Test Layout
 
-- Test file placement pattern: **None** – no `src/test/` or equivalent directory
-- Naming convention: [TODO] – to be established; target: `*Test.java` in `src/test/java/<package>/`
-- Setup files and where they run: [TODO]
+- Test file placement pattern: `src/test/java/<package>/`
+- Naming convention: `*Test.java`; shared helpers live under `src/test/java/testutil/`
+- Setup files and where they run: tests call `LegacyStateReset.resetAll()` from `@BeforeEach` where legacy static state is involved
 
 ### 3) Test Scope Matrix
 
