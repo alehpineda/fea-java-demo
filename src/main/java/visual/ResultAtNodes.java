@@ -133,8 +133,10 @@ public class ResultAtNodes {
     }
 
     // Compute stress invariants and equivalent stress.
-        double sz  = fem.nDim == 3 ? stressNod[node][2] : stressNod[node][3];
-        double sxy = fem.nDim == 3 ? stressNod[node][3] : stressNod[node][2];
+        double sz  = fem.nDim == 3 ? stressNod[node][2] : stressNod[node][3];
+
+        double sxy = fem.nDim == 3 ? stressNod[node][3] : stressNod[node][2];
+
         double sx  = stressNod[node][0];
         double sy  = stressNod[node][1];
         double sz  = stressNod[node][2];
@@ -154,10 +156,15 @@ public class ResultAtNodes {
         // Second and third deviatoric invariants
         double J2 =  0.5*(dx*dx + dy*dy + dz*dz)
                   + sxy*sxy + syz*syz + szx*szx;
-        double J3 = dx*dy*dz + 2*sxy*syz*szx
-                  - dx*syz*syz - dy*szx*szx - dz*sxy*sxy;
         // Angle
         psi = THIRD*Math.acos(1.5*SQ3*J3/Math.sqrt(J2*J2*J2));
+        if (J2 < 1e-30) {
+            psi = 0.0;
+            return;
+        }
+        // Angle
+        double acosArg = 1.5*SQ3*J3/Math.sqrt(J2*J2*J2);
+        psi = THIRD*Math.acos(Math.max(-1.0, Math.min(1.0, acosArg)));
         // Equivalent stress
         si = Math.sqrt(3*J2);
     }
