@@ -16,9 +16,13 @@ public class readmesh {
         Jmgen.PR.printf("ReadMesh:  %s    %s\n",
                 modelName, fileName);
         FeScanner RD = new FeScanner(Jmgen.RD.resolveSibling(fileName));
-        FeModel m = new FeModel(RD, Jmgen.PR);
-        m.readData();
-        Jmgen.blocks.put(modelName, m);
+        try {
+            FeModel m = new FeModel(RD, Jmgen.PR);
+            m.readData();
+            Jmgen.blocks.put(modelName, m);
+        } finally {
+            RD.close();
+        }
         Jmgen.PR.printf("Mesh " + modelName +
                 ": nEl = %d  nNod = %d\n", m.nEl, m.nNod);
     }
