@@ -145,7 +145,11 @@ public class FeModel extends FeModelData {
             case includefile:
                 s = es.next();
                 FeScanner R = new FeScanner(es.resolveSibling(s));
-                readDataFile(R);
+                try {
+                    readDataFile(R);
+                } finally {
+                    R.close();
+                }
                 break;
 
             case end:  return;
