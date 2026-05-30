@@ -21,9 +21,9 @@
 
 | Scope | Covered? | Typical target | Notes |
 |-------|----------|----------------|-------|
-| Unit | No | Parsers, Gauss rules, shape functions, material laws | Blocked by static shared state and `System.exit` |
-| Integration | No | Solver + model round-trip | Requires example `.fem` files as fixtures |
-| E2E / Regression | No | Full example runs compared to golden `.lst.1` / `.mesh` | Highest value: validates numerical behavior |
+| Unit | Yes | Parsers, Gauss rules, material laws, factories, coordinate helpers | Uses JUnit 5 and AssertJ |
+| Integration | Yes | Solver + model round-trip; mesh generator flows | Uses shipped example fixtures and temporary output directories |
+| E2E / Regression | Yes | Full example runs compared to golden `.lst.*` / `.mesh` outputs | Numerical values are compared with floating-point tolerances |
 
 ### 4) Mocking and Isolation Strategy
 
