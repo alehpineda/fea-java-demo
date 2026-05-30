@@ -50,7 +50,7 @@ java --module-path /path/to/javafx-sdk/lib --add-modules javafx.controls,javafx.
 | `java.applet.Applet` | `javafx.application.Application` |
 | `Canvas3D` / `SimpleUniverse` | `SubScene` / `PerspectiveCamera` |
 | `BranchGroup` / `TransformGroup` | `Group` with `Rotate` / `Translate` / `Scale` |
-| `javax.media.j3d.DirectionalLight` | `javafx.scene.PointLight` / `AmbientLight` |
+| `javax.media.j3d.DirectionalLight` | `javafx.scene.DirectionalLight` / `AmbientLight` |
 | `TriangleArray` / `LineArray` | `TriangleMesh` / cylinder `Group` / sphere `Group` |
 | `Texture2D` / `TextureLoader` | `WritableImage` / `PixelWriter` |
 | `javax.vecmath.Color3f` | `javafx.scene.paint.Color` |
