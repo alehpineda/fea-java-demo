@@ -94,13 +94,17 @@ public class ResultAtNodes {
                 case sy:
                     f = stressNod[node][1];            break;
                 case sz:
-                    f = fem.nDim == 3 ? stressNod[node][2] : stressNod[node][3]; break;
+                    f = fem.nDim == 3 ? stressNod[node][2] : stressNod[node][3]; break;
+
                 case sxy:
-                    f = fem.nDim == 3 ? stressNod[node][3] : stressNod[node][2]; break;
+                    f = fem.nDim == 3 ? stressNod[node][3] : stressNod[node][2]; break;
+
                 case syz:
-                    f = fem.nDim == 3 ? stressNod[node][4] : 0.0; break;
+                    f = fem.nDim == 3 ? stressNod[node][4] : 0.0; break;
+
                 case szx:
-                    f = fem.nDim == 3 ? stressNod[node][5] : 0.0; break;
+                    f = fem.nDim == 3 ? stressNod[node][5] : 0.0; break;
+
                 case s1:
                     f = sm + 2*THIRD*si*Math.cos(psi); break;
                 case s2:
@@ -129,8 +133,8 @@ public class ResultAtNodes {
     }
 
     // Compute stress invariants and equivalent stress.
-    private void setEquivalentStress(int node) {
-        // Stresses
+        double sz  = fem.nDim == 3 ? stressNod[node][2] : stressNod[node][3];
+        double sxy = fem.nDim == 3 ? stressNod[node][3] : stressNod[node][2];
         double sx  = stressNod[node][0];
         double sy  = stressNod[node][1];
         double sz  = stressNod[node][2];
