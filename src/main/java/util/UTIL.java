@@ -19,11 +19,12 @@ public class UTIL {
             c.get(Calendar.MINUTE),c.get(Calendar.SECOND));
     }
 
-    // Print error message and exit.
+    // Print error message and throw exception (modernized from System.exit for testability and Java 25+).
+    // Original CLI behavior (abrupt exit) is approximated by uncaught exception terminating JVM.
     // message - error message that is printed.
     public static void errorMsg(String message) {
-            System.out.println("=== ERROR: " + message);
-            System.exit(1);
+        System.err.println("=== ERROR: " + message);
+        throw new IllegalStateException("FEA error: " + message);
     }
 
     // Transform text direction into integer.

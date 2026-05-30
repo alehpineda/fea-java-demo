@@ -6,7 +6,7 @@ import javax.media.j3d.*;
 import java.util.ListIterator;
 
 // Element subfaces, subedges and nodes.
-class SurfaceSubGeometry extends SurfaceGeometry {
+public class SurfaceSubGeometry extends SurfaceGeometry {
 
     int nVertices;
     private FaceSubdivision fs;

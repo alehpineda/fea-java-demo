@@ -7,6 +7,10 @@ import java.applet.Applet;
 import com.sun.j3d.utils.applet.MainFrame;
 
 // Main class of the visualizer
+//
+// @deprecated Legacy Java3D + Applet implementation.
+// Use visual.vtk.VtkLauncher instead (activated via -Pvisual-vtk profile).
+// See visual/vtk/CLEANUP_PLAN.md for migration status.
 public class Jvis extends Applet {
 
     public static FeScanner RD = null;

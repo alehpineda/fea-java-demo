@@ -4,13 +4,14 @@ import util.*;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Map;
 
 // Main class of the mesh generator
 public class Jmgen {
 
     public static FeScanner RD;
     public static PrintWriter PR;
-    public static HashMap blocks;
+    public static Map<String, Object> blocks;
 
     public static void main(String[] args) {
 
@@ -40,7 +41,7 @@ public class Jmgen {
         UTIL.printDate(PR);
 
         // Hash table for storing mesh blocks
-        blocks = new HashMap();
+        blocks = new HashMap<>();
 
         while (RD.hasNext()) {
 
@@ -49,9 +50,11 @@ public class Jmgen {
             PR.println("------------------------------------");
 
             try {
-                Class.forName("gener." + name).newInstance();
+                // Modern replacement for deprecated Class.newInstance() (Java 9+ deprecation, removal risk in 25+)
+                // See Java 11->17 and 17->21 upgrade guides. Safer Constructor access.
+                Class.forName("gener." + name).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                UTIL.errorMsg("Class name not found: "+name);
+                UTIL.errorMsg("Class name not found: " + name);
             }
         }
         PR.close();

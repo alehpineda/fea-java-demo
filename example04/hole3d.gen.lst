@@ -1,5 +1,5 @@
-fea.Jmgen: Mesh generator. Data file: hole3d.gen
-Date: 2009-09-16  Time: 16:30:36
+fea.Jmgen: Mesh generator. Data file: example04/hole3d.gen
+Date: 2026-05-29  Time: 17:48:01
 ------------------------------------
 GenQuad8: b1
  nh =    4
