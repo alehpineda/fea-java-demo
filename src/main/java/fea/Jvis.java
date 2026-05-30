@@ -52,7 +52,11 @@ public class Jvis extends Application {
     public void start(Stage stage) {
 
         FeScanner rd = new FeScanner(inputFile);
-        VisData.readData(rd);
+        try {
+            VisData.readData(rd);
+        } finally {
+            rd.close();
+        }
         new J3dScene(stage);
     }
 }
