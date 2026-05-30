@@ -13,8 +13,8 @@
 
 | Store | Role | Access layer | Key risk | Evidence |
 |-------|------|--------------|----------|----------|
-| Plain-text input files (`.fem`, `.gen`, `.vis`) | FE model definition, mesh generation commands, visualization config | `util.FeScanner` (token scanner over `java.util.Scanner`) | File not found → `System.exit(1)` | `src/util/FeScanner.java` |
-| Plain-text output files (`.lst`, `.mesh`, `.res`) | Solver output, mesh data, result data | `util.FePrintWriter` (wraps `PrintWriter`) | Cannot open → `System.exit(1)` | `src/util/FePrintWriter.java` |
+| Plain-text input files (`.fem`, `.gen`, `.vis`) | FE model definition, mesh generation commands, visualization config | `util.FeScanner` (token scanner over `java.util.Scanner`) | File not found → `FeaException` | `src/util/FeScanner.java` |
+| Plain-text output files (`.lst`, `.mesh`, `.res`) | Solver output, mesh data, result data | `util.FePrintWriter` (wraps `PrintWriter`) | Cannot open → `FeaException` | `src/util/FePrintWriter.java` |
 
 ### 3) Secrets and Credentials Handling
 
