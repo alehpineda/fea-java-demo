@@ -36,9 +36,9 @@
 
 ### 5) Testing Conventions
 
-- Test file naming/location rule: **No tests exist**
-- Mocking strategy norm: [TODO] – not established; will require SecurityManager override or refactor for `System.exit` calls
-- Coverage expectation: [TODO] – target ≥ 90% line coverage per problem statement
+- Test file naming/location rule: JUnit 5 tests live under `src/test/java/<package>/` and use `*Test.java` names
+- Mocking strategy norm: AssertJ for assertions; reset legacy static state with `LegacyStateReset.resetAll()` in `@BeforeEach` where needed
+- Coverage expectation: JaCoCo enforces ≥ 90% line coverage for the `util` and `material` packages
 
 ### 6) Evidence
 
