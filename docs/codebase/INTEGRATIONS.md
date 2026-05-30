@@ -23,15 +23,15 @@
 
 ### 4) Reliability and Failure Behavior
 
-- Retry/backoff: None – any I/O error immediately calls `System.exit(1)`
+- Retry/backoff: None – any I/O error raises `FeaException`; CLI entry points catch it, report the message, and exit non-zero
 - Timeout: None configured
 - Circuit-breaker: None
 
 ### 5) Observability for Integrations
 
-- Logging around file operations: minimal – file-not-found error printed to stdout before exit
+- Logging around file operations: minimal – errors are reported to stdout and, where available, the listing file
 - Metrics/tracing: None
-- Missing visibility gaps: no structured error reporting; no stack traces surfaced to user
+- Missing visibility gaps: no structured error reporting or metrics
 
 ### 6) Evidence
 
