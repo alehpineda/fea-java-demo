@@ -7,8 +7,7 @@
 | System | Type | Purpose | Auth model | Criticality | Evidence |
 |--------|------|---------|------------|-------------|----------|
 | Local filesystem | File I/O | Read `.fem`/`.gen`/`.vis` input; write `.lst`/`.mesh`/`.res` output | None – local file path only | High (only I/O mechanism) | `src/util/FeScanner.java`, `src/util/FePrintWriter.java` |
-| Java 3D (`javax.media.j3d`) | Native library (optional) | 3D visualization of FE results | None | Low (visualization only) | `src/visual/J3dScene.java`, `src/fea/Jvis.java` |
-| Java AWT / Applet (`java.applet`) | JDK runtime API (deprecated) | Hosts Java 3D visualization window | None | Low (visualization only) | `src/fea/Jvis.java` |
+| JavaFX (`org.openjfx`) | UI/runtime library | Interactive 3D visualization of FE results | None | Low (visualization only) | `pom.xml`, `src/fea/Jvis.java`, `src/visual/J3dScene.java` |
 
 ### 2) Data Stores
 
