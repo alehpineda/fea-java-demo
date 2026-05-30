@@ -42,7 +42,7 @@
 
 ### 6) Evidence
 
-- `src/util/UTIL.java` – `errorMsg()` / `System.exit(1)`
+- `src/util/UTIL.java` – `errorMsg()` / `FeaException` error strategy
 - `src/fea/FE.java` – constant naming style
 - `src/model/FeModelData.java` – field naming style
 - Scan output: "No linting or formatting config files found"
